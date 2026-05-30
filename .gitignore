@@ -1,0 +1,27 @@
+# Rust build
+target/
+
+# Database (generated at runtime, not committed)
+data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Environment
+.env
+.env.local
+
+# Temp / generated runtime files
+*.log
+*.pid

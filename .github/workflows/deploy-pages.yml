@@ -1,0 +1,80 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate index.json structure
+        run: |
+          python3 -c "
+          import json, sys
+          with open('docs/index.json') as f:
+              d = json.load(f)
+          assert 'meta' in d, 'Missing meta'
+          assert 'nodes' in d, 'Missing nodes'
+          assert 'edges' in d, 'Missing edges'
+          assert isinstance(d['nodes'], list), 'nodes not a list'
+          assert isinstance(d['edges'], list), 'edges not a list'
+          assert d['meta']['entity_count'] == len(d['nodes']), 'entity_count mismatch'
+          print(f'Valid index.json: {d[\"meta\"][\"entity_count\"]} nodes, {d[\"meta\"][\"edge_count\"]} edges')
+          "
+
+      - name: Validate index.lite.json
+        run: |
+          python3 -c "
+          import json, sys
+          with open('docs/index.lite.json') as f:
+              nodes = json.load(f)
+          assert isinstance(nodes, list), 'Not a list'
+          for n in nodes:
+              assert 'id' in n, f'Node missing id: {n}'
+              assert 'l' in n, f'Node missing label: {n}'
+          print(f'Valid index.lite.json: {len(nodes)} nodes')
+          "
+
+      - name: Check for oversized files
+        run: |
+          MAX_SIZE=52428800  # 50MB
+          SIZES=$(find docs/ -name '*.json' -exec sh -c 'echo "$(stat --printf="%s" "$1") $1"' _ {} \;)
+          echo "$SIZES" | while read size path; do
+            if [ "$size" -gt "$MAX_SIZE" ]; then
+              echo "ERROR: $path is ${size} bytes (max ${MAX_SIZE})"
+              exit 1
+            fi
+          done
+          echo "All file sizes OK"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/
+
+  deploy:
+    needs: validate
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

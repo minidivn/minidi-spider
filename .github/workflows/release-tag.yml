@@ -1,0 +1,167 @@
+name: Create Data Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: 'Revision number (e.g., 1, 2, 3...)'
+        required: true
+        default: '1'
+      bump_level:
+        description: 'Version bump level'
+        required: true
+        default: 'revision'
+        type: choice
+        options:
+          - revision
+          - month
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLORS: always
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Determine version tag
+        id: version
+        run: |
+          YEAR=$(date -u +%Y)
+          MONTH=$(date -u +%m)
+          REV="${{ inputs.revision }}"
+
+          # If bump_level is month, reset revision to 1 and use current month
+          if [ "${{ inputs.bump_level }}" = "month" ]; then
+            MONTH=$(date -u +%m)
+            REV="1"
+          fi
+
+          # Find latest tag to compute next revision if auto
+          LATEST_TAG=$(git tag -l "v${YEAR}.${MONTH}.*" | sort -V | tail -1)
+          if [ -n "$LATEST_TAG" ] && [ "$REV" = "auto" ]; then
+            # Increment revision
+            REV=$(echo "$LATEST_TAG" | sed 's/.*\.\([0-9]*\)/\1/')
+            REV=$((REV + 1))
+          fi
+
+          VERSION="v${YEAR}.${MONTH}.${REV}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Creating release: ${VERSION}"
+
+      - name: Verify main is up to date
+        run: |
+          git fetch origin develop
+          BEHIND=$(git rev-list --count main..origin/develop 2>/dev/null || echo "0")
+          if [ "$BEHIND" -gt "5" ]; then
+            echo "⚠️  main is ${BEHIND} commits behind develop. Consider merging develop first."
+            echo "Proceeding anyway..."
+          fi
+
+      - name: Generate changelog entry
+        run: |
+          mkdir -p docs/_metadata
+          LAST_TAG=$(git tag -l "v*" | sort -V | tail -1)
+
+          if [ -n "$LAST_TAG" ]; then
+            CHANGES=$(git --no-pager log --oneline "$LAST_TAG..HEAD" -- docs/ 2>/dev/null | head -50)
+          else
+            CHANGES=$(git --no-pager log --oneline -- docs/ 2>/dev/null | head -50)
+          fi
+
+          # Update changelog
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+          if [ -f "docs/_metadata/changelog.json" ]; then
+            # Append to existing
+            python3 -c "
+            import json
+            with open('docs/_metadata/changelog.json') as f:
+              cl = json.load(f)
+            cl['releases'].insert(0, {
+              'version': '${{ steps.version.outputs.version }}',
+              'timestamp': '$TIMESTAMP',
+              'changes': """ > /tmp/changelog_entry.txt
+            echo "$CHANGES" >> /tmp/changelog_entry.txt
+            python3 -c "
+            import json
+            with open('docs/_metadata/changelog.json') as f:
+              cl = json.load(f)
+            with open('/tmp/changelog_entry.txt') as f:
+              entry = f.read().strip()
+            cl['releases'].insert(0, {
+              'version': '${{ steps.version.outputs.version }}',
+              'timestamp': '$TIMESTAMP',
+              'changes': entry
+            })
+            with open('docs/_metadata/changelog.json', 'w') as f:
+              json.dump(cl, f, indent=2)
+            "
+          else
+            cat > docs/_metadata/changelog.json << EOF
+            {
+              "schema": "changelog/v1",
+              "releases": [
+                {
+                  "version": "${{ steps.version.outputs.version }}",
+                  "timestamp": "$TIMESTAMP",
+                  "changes": "Initial release"
+                }
+              ]
+            }
+            EOF
+          fi
+
+      - name: Commit changelog update
+        run: |
+          git config user.name "minidi-spider[bot]"
+          git config user.email "minidi-spider[bot]@users.noreply.github.com"
+
+          # Only commit if changelog changed
+          git add docs/_metadata/changelog.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(release): update changelog for ${{ steps.version.outputs.version }}"
+            git push origin main
+          fi
+
+      - name: Create git tag
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Create annotated tag
+          git tag -a "$VERSION" -m "Data release $VERSION
+
+          Auto-tagged by minidi-spider release workflow.
+          Published to GitHub Pages: https://midivn.github.io/minidi-vn-data/"
+
+          # Move data/latest tag
+          git tag -f data/latest HEAD
+
+          # Push tags
+          git push origin "$VERSION"
+          git push origin data/latest --force
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.version }}" \
+            --title "Data Release ${{ steps.version.outputs.version }}" \
+            --notes "Automated data release from WikiData crawl.
+
+          Published to: https://midivn.github.io/minidi-vn-data/
+
+          ### Contents
+          - \`docs/index.json\` — Full entity + edge index
+          - \`docs/index.lite.json\` — Lightweight entity index
+          - \`docs/v1/**\` — Partitioned entities, timeline, regions
+          - \`docs/embeddings.*\` — BOW embedding vectors
+          " \
+            --target main
