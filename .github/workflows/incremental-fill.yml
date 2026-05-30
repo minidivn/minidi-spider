@@ -187,6 +187,7 @@ print(c.get('current_partition', ''))
           cp /tmp/export/sources.json docs/ 2>/dev/null || true
 
       - name: Update cursor
+        id: cursor
         working-directory: data
         run: |
           CURRENT="${{ steps.partition.outputs.partition }}"
