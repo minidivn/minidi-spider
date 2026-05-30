@@ -13,6 +13,333 @@ use super::{CrawlContext, CrawlResult, DataSource, SourceSchema};
 const WDQS_URL: &str = "https://query.wikidata.org/sparql";
 const WIKI_API: &str = "https://www.wikidata.org/w/api.php";
 
+// ── Partition Definitions ───────────────────────────────────────
+
+/// A crawlable partition that maps to a subset of WikiData queries.
+pub struct PartitionDef {
+    pub name: &'static str,
+    pub description: &'static str,
+    /// Base query category: "admin", "history", "people", "heritage"
+    pub category: &'static str,
+    /// Optional SPARQL FILTER snippet (appended to base query WHERE clause).
+    /// Empty string = no filter.
+    pub filter: &'static str,
+}
+
+/// All 50 partitions for gradual data fill.
+/// Each partition crawls a focused subset and can be committed independently.
+pub const ALL_PARTITIONS: &[PartitionDef] = &[
+    // ── Tier 1: Geography / Admin Divisions (10) ──
+    PartitionDef {
+        name: "adm-vn-country",
+        description: "Vietnam country entity + neighbors",
+        category: "admin",
+        filter: "?item = wd:Q881",
+    },
+    PartitionDef {
+        name: "adm-north-provinces",
+        description: "Northern provinces (Red River Delta, Northeast, Northwest)",
+        category: "admin",
+        filter: "",
+    },
+    PartitionDef {
+        name: "adm-central-provinces",
+        description: "North Central Coast provinces",
+        category: "admin",
+        filter: "",
+    },
+    PartitionDef {
+        name: "adm-south-provinces",
+        description: "Southern provinces (Southeast, Mekong Delta)",
+        category: "admin",
+        filter: "",
+    },
+    PartitionDef {
+        name: "adm-highlands",
+        description: "Central Highlands (Tây Nguyên) provinces",
+        category: "admin",
+        filter: "",
+    },
+    PartitionDef {
+        name: "adm-hanoi",
+        description: "Hanoi districts and communes",
+        category: "admin",
+        filter: "",
+    },
+    PartitionDef {
+        name: "adm-hcmc",
+        description: "Ho Chi Minh City districts and communes",
+        category: "admin",
+        filter: "",
+    },
+    PartitionDef {
+        name: "adm-danang",
+        description: "Da Nang city districts",
+        category: "admin",
+        filter: "",
+    },
+    PartitionDef {
+        name: "adm-haiphong",
+        description: "Hai Phong city districts",
+        category: "admin",
+        filter: "",
+    },
+    PartitionDef {
+        name: "adm-cantho",
+        description: "Can Tho city districts",
+        category: "admin",
+        filter: "",
+    },
+    // ── Tier 2: History by Era (12) ──
+    PartitionDef {
+        name: "hist-paleolithic",
+        description: "Paleolithic cultures (Sơn Vi, Hòa Bình, Đông Sơn)",
+        category: "history",
+        filter: "FILTER(YEAR(?pointInTime) < -1000)",
+    },
+    PartitionDef {
+        name: "hist-hongbang",
+        description: "Hồng Bàng dynasty (2879–258 BCE)",
+        category: "history",
+        filter: "FILTER(YEAR(?pointInTime) >= -2879 && YEAR(?pointInTime) < -258)",
+    },
+    PartitionDef {
+        name: "hist-chinese-dom",
+        description: "Chinese domination (111 BCE–939 CE)",
+        category: "history",
+        filter: "FILTER(YEAR(?pointInTime) >= -111 && YEAR(?pointInTime) < 939)",
+    },
+    PartitionDef {
+        name: "hist-ngo-dinh-le",
+        description: "Ngô-Đinh-Lê dynasties (939–1009)",
+        category: "history",
+        filter: "FILTER(YEAR(?pointInTime) >= 939 && YEAR(?pointInTime) < 1010)",
+    },
+    PartitionDef {
+        name: "hist-ly",
+        description: "Lý dynasty (1009–1225)",
+        category: "history",
+        filter: "FILTER(YEAR(?pointInTime) >= 1010 && YEAR(?pointInTime) < 1225)",
+    },
+    PartitionDef {
+        name: "hist-tran",
+        description: "Trần dynasty + Mongol invasions (1225–1400)",
+        category: "history",
+        filter: "FILTER(YEAR(?pointInTime) >= 1225 && YEAR(?pointInTime) < 1400)",
+    },
+    PartitionDef {
+        name: "hist-le-so",
+        description: "Later Lê dynasty (1428–1789)",
+        category: "history",
+        filter: "FILTER(YEAR(?pointInTime) >= 1428 && YEAR(?pointInTime) < 1789)",
+    },
+    PartitionDef {
+        name: "hist-tay-son",
+        description: "Tây Sơn dynasty (1778–1802)",
+        category: "history",
+        filter: "FILTER(YEAR(?pointInTime) >= 1778 && YEAR(?pointInTime) < 1802)",
+    },
+    PartitionDef {
+        name: "hist-nguyen",
+        description: "Nguyễn dynasty (1802–1945)",
+        category: "history",
+        filter: "FILTER(YEAR(?pointInTime) >= 1802 && YEAR(?pointInTime) < 1945)",
+    },
+    PartitionDef {
+        name: "hist-colonial",
+        description: "French colonial period (1858–1954)",
+        category: "history",
+        filter: "FILTER(YEAR(?pointInTime) >= 1858 && YEAR(?pointInTime) < 1954)",
+    },
+    PartitionDef {
+        name: "hist-vn-war",
+        description: "Vietnam War / American War (1955–1975)",
+        category: "history",
+        filter: "FILTER(YEAR(?pointInTime) >= 1955 && YEAR(?pointInTime) < 1975)",
+    },
+    PartitionDef {
+        name: "hist-modern",
+        description: "Modern Vietnam (1975–present)",
+        category: "history",
+        filter: "FILTER(YEAR(?pointInTime) >= 1975)",
+    },
+    // ── Tier 3: People by Occupation (14) ──
+    PartitionDef {
+        name: "people-rulers",
+        description: "Kings, emperors, presidents, prime ministers",
+        category: "people",
+        filter: "",
+    },
+    PartitionDef {
+        name: "people-military",
+        description: "Generals, strategists, war heroes",
+        category: "people",
+        filter: "",
+    },
+    PartitionDef {
+        name: "people-writers",
+        description: "Poets, writers, journalists",
+        category: "people",
+        filter: "",
+    },
+    PartitionDef {
+        name: "people-scientists",
+        description: "Scientists, inventors, doctors",
+        category: "people",
+        filter: "",
+    },
+    PartitionDef {
+        name: "people-artists",
+        description: "Painters, musicians, filmmakers",
+        category: "people",
+        filter: "",
+    },
+    PartitionDef {
+        name: "people-revolution",
+        description: "Revolutionaries, independence fighters",
+        category: "people",
+        filter: "",
+    },
+    PartitionDef {
+        name: "people-religion",
+        description: "Buddhist monks, religious figures",
+        category: "people",
+        filter: "",
+    },
+    PartitionDef {
+        name: "people-educators",
+        description: "Teachers, professors, scholars",
+        category: "people",
+        filter: "",
+    },
+    PartitionDef {
+        name: "people-politicians",
+        description: "Politicians, diplomats, officials",
+        category: "people",
+        filter: "",
+    },
+    PartitionDef {
+        name: "people-sports",
+        description: "Athletes, coaches, sports figures",
+        category: "people",
+        filter: "",
+    },
+    PartitionDef {
+        name: "people-business",
+        description: "Business people, entrepreneurs",
+        category: "people",
+        filter: "",
+    },
+    PartitionDef {
+        name: "people-foreign",
+        description: "Foreigners significant to Vietnam",
+        category: "people",
+        filter: "",
+    },
+    PartitionDef {
+        name: "people-royalty",
+        description: "Royal family members, consorts",
+        category: "people",
+        filter: "",
+    },
+    PartitionDef {
+        name: "people-contemporary",
+        description: "21st century contemporary figures",
+        category: "people",
+        filter: "",
+    },
+    // ── Tier 4: Culture & Heritage (8) ──
+    PartitionDef {
+        name: "culture-heritage",
+        description: "UNESCO World Heritage sites",
+        category: "heritage",
+        filter: "?item wdt:P31 wd:Q9259",
+    },
+    PartitionDef {
+        name: "culture-festivals",
+        description: "Festivals and celebrations",
+        category: "heritage",
+        filter: "?item wdt:P31 wd:Q132241",
+    },
+    PartitionDef {
+        name: "culture-religion",
+        description: "Temples, pagodas, churches, religious sites",
+        category: "heritage",
+        filter: "",
+    },
+    PartitionDef {
+        name: "culture-cuisine",
+        description: "Vietnamese dishes, ingredients, food culture",
+        category: "heritage",
+        filter: "",
+    },
+    PartitionDef {
+        name: "culture-music",
+        description: "Traditional music, instruments, performers",
+        category: "heritage",
+        filter: "",
+    },
+    PartitionDef {
+        name: "culture-architecture",
+        description: "Architectural works, monuments, landmarks",
+        category: "heritage",
+        filter: "",
+    },
+    PartitionDef {
+        name: "culture-clothing",
+        description: "Traditional dress (áo dài, etc.)",
+        category: "heritage",
+        filter: "",
+    },
+    PartitionDef {
+        name: "culture-oral",
+        description: "Intangible cultural heritage",
+        category: "heritage",
+        filter: "",
+    },
+    // ── Tier 5: Nature & Geography (6) ──
+    PartitionDef {
+        name: "nature-rivers",
+        description: "Rivers, waterways, deltas",
+        category: "heritage",
+        filter: "",
+    },
+    PartitionDef {
+        name: "nature-mountains",
+        description: "Mountains, passes, peaks",
+        category: "heritage",
+        filter: "",
+    },
+    PartitionDef {
+        name: "nature-national-parks",
+        description: "National parks, nature reserves",
+        category: "heritage",
+        filter: "?item wdt:P31 wd:Q916333",
+    },
+    PartitionDef {
+        name: "nature-islands",
+        description: "Islands, archipelagos",
+        category: "heritage",
+        filter: "",
+    },
+    PartitionDef {
+        name: "nature-beaches",
+        description: "Beaches, bays, coastal features",
+        category: "heritage",
+        filter: "",
+    },
+    PartitionDef {
+        name: "nature-caves",
+        description: "Caves, grottoes, karst formations",
+        category: "heritage",
+        filter: "",
+    },
+];
+
+pub fn find_partition(name: &str) -> Option<&'static PartitionDef> {
+    ALL_PARTITIONS.iter().find(|p| p.name == name)
+}
+
 // ── SPARQL Queries ──────────────────────────────────────────────
 
 const VIETNAM_ADMIN_DIVISIONS: &str = r#"
@@ -138,32 +465,62 @@ impl DataSource for WikiDataSource {
     }
 
     async fn crawl(&self, ctx: &CrawlContext) -> Result<CrawlResult> {
-        info!("[wikidata] Starting Vietnam crawl...");
-
-        let datasets: Vec<(&str, &str)> = vec![
-            ("admin_divisions", VIETNAM_ADMIN_DIVISIONS),
-            ("history_events", VIETNAM_HISTORY_EVENTS),
-            ("people", VIETNAM_PEOPLE),
-            ("heritage", VIETNAM_HERITAGE),
-        ];
-
         let mut all_nodes: Vec<HyperNode> = Vec::new();
         let mut all_edges: Vec<HyperEdge> = Vec::new();
         let mut seen_ids = std::collections::HashSet::new();
+
+        // Determine which dataset(s) to crawl
+        let datasets: Vec<(&str, &str, Option<String>)> = if let Some(ref pname) = ctx.partition {
+            // Single partition mode
+            let part = find_partition(pname).ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Unknown partition: {}. Use --list-partitions to see all.",
+                    pname
+                )
+            })?;
+            info!("[wikidata] Partition: {} — {}", part.name, part.description);
+            match self.build_partition_query(part) {
+                Some((name, query)) => vec![(name, query, None)],
+                None => return Err(anyhow::anyhow!("No query for partition: {}", pname)),
+            }
+        } else {
+            // Full crawl: run all 4 datasets
+            vec![
+                ("admin_divisions", "full", None),
+                ("history_events", "full", None),
+                ("people", "full", None),
+                ("heritage", "full", None),
+            ]
+            .into_iter()
+            .map(|(n, _, _)| {
+                let q = match n {
+                    "admin_divisions" => VIETNAM_ADMIN_DIVISIONS.to_string(),
+                    "history_events" => VIETNAM_HISTORY_EVENTS.to_string(),
+                    "people" => VIETNAM_PEOPLE.to_string(),
+                    "heritage" => VIETNAM_HERITAGE.to_string(),
+                    _ => unreachable!(),
+                };
+                let final_q = if ctx.limit > 0 {
+                    apply_limit(&q, ctx.limit)
+                } else {
+                    q
+                };
+                (n, Some(final_q))
+            })
+            .collect::<Vec<_>>()
+        };
 
         let pb = ctx
             .progress
             .then(|| ProgressBar::new_spinner().with_message("[wikidata] crawling..."));
 
-        for (name, query) in &datasets {
-            let limit = ctx.limit;
-            let final_query = if limit > 0 {
-                apply_limit(query, limit)
-            } else {
-                query.to_string()
+        for (name, query_opt, _) in &datasets {
+            let q = match query_opt {
+                Some(q) => q.clone(),
+                None => continue,
             };
 
-            match self.exec_sparql(&ctx.client, &final_query).await {
+            match self.exec_sparql(&ctx.client, &q).await {
                 Ok(json) => {
                     let bindings = parse_bindings(&json);
                     let nodes: Vec<HyperNode> = bindings
@@ -175,8 +532,8 @@ impl DataSource for WikiDataSource {
                             all_nodes.push(node);
                         }
                     }
-                    let count = if limit > 0 {
-                        limit.min(bindings.len())
+                    let count = if ctx.limit > 0 {
+                        ctx.limit.min(bindings.len())
                     } else {
                         bindings.len()
                     };
@@ -237,6 +594,45 @@ impl DataSource for WikiDataSource {
 }
 
 impl WikiDataSource {
+    /// Build a SPARQL query for a specific partition definition.
+    /// Returns (query_name, query_string).
+    fn build_partition_query(&self, part: &PartitionDef) -> Option<(&str, String)> {
+        let base = match part.category {
+            "admin" => VIETNAM_ADMIN_DIVISIONS,
+            "history" => VIETNAM_HISTORY_EVENTS,
+            "people" => VIETNAM_PEOPLE,
+            "heritage" => VIETNAM_HERITAGE,
+            _ => return None,
+        };
+
+        let filter = part.filter.trim();
+        let query = if filter.is_empty() {
+            base.to_string()
+        } else {
+            // Insert filter before the SERVICE wikibase:label line
+            if let Some(pos) = base.rfind("SERVICE wikibase:label") {
+                // Build the FILTER or triple pattern
+                let filter_clause = if filter.starts_with("FILTER") || filter.starts_with("filter")
+                {
+                    format!("  {}\n", filter)
+                } else if filter.contains(' ') && !filter.contains("FILTER") {
+                    // It's a raw triple pattern
+                    format!("  {}.\n", filter)
+                } else {
+                    format!("  FILTER({}).\n", filter)
+                };
+
+                let before = &base[..pos];
+                let after = &base[pos..];
+                format!("{}{}{}", before, filter_clause, after)
+            } else {
+                base.to_string()
+            }
+        };
+
+        Some((part.category, query))
+    }
+
     async fn exec_sparql(&self, client: &reqwest::Client, query: &str) -> Result<Value> {
         let resp = client
             .post(WDQS_URL)

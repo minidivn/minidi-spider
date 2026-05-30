@@ -37,6 +37,15 @@ enum Command {
         #[arg(short, long)]
         source: Vec<String>,
 
+        /// Named partition to crawl (e.g. adm-north-provinces, hist-tran).
+        /// Omit = crawl everything. Use --list-partitions to see all.
+        #[arg(long)]
+        partition: Option<String>,
+
+        /// List available partition names and exit
+        #[arg(long)]
+        list_partitions: bool,
+
         /// Max entities per source (0 = no limit)
         #[arg(short, long, default_value = "0")]
         limit: usize,
@@ -113,10 +122,12 @@ async fn main() -> Result<()> {
         Command::Crawl {
             db,
             source,
+            partition,
+            list_partitions,
             limit,
             progress,
         } => {
-            cmd_crawl(db, source, limit, progress).await?;
+            cmd_crawl(db, source, partition, list_partitions, limit, progress).await?;
         }
         Command::Export {
             db,
@@ -158,14 +169,26 @@ fn cmd_sources() -> Result<()> {
 async fn cmd_crawl(
     db_path: PathBuf,
     sources: Vec<String>,
+    partition: Option<String>,
+    list_partitions: bool,
     limit: usize,
     progress: bool,
 ) -> Result<()> {
     info!("Opening store at: {}", db_path.display());
     let store = graph::store::HyperGraphStore::open(&db_path)?;
 
+    // Handle partition listing
+    if list_partitions {
+        println!("\n📦 Available Partitions for source: wikidata\n");
+        for p in sources::wikidata::ALL_PARTITIONS {
+            println!("  {:30} {}", p.name, p.description);
+        }
+        println!("\nUse: cargo run -- crawl --partition <name>");
+        return Ok(());
+    }
+
     let registry = build_registry();
-    let ctx = CrawlContext::new(limit, progress)?;
+    let ctx = CrawlContext::new(limit, progress, partition.clone())?;
 
     let targets: Vec<&str> = if sources.is_empty() {
         registry

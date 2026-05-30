@@ -46,10 +46,13 @@ pub struct CrawlContext {
     pub limit: usize,
     pub progress: bool,
     pub user_agent: String,
+    /// Optional named partition to restrict crawling to (e.g. "adm-north-provinces").
+    /// None = crawl everything the source provides.
+    pub partition: Option<String>,
 }
 
 impl CrawlContext {
-    pub fn new(limit: usize, progress: bool) -> Result<Self> {
+    pub fn new(limit: usize, progress: bool, partition: Option<String>) -> Result<Self> {
         let client = reqwest::Client::builder()
             .user_agent(format!(
                 "MinidiSpider/0.1 (+https://github.com/minidivn/minidi-spider)"
@@ -62,6 +65,7 @@ impl CrawlContext {
             client,
             limit,
             progress,
+            partition,
             user_agent: format!("MinidiSpider/0.1"),
         })
     }
