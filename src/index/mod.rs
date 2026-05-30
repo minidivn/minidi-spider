@@ -1,3 +1,5 @@
+pub mod export;
+
 use anyhow::Result;
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
@@ -44,10 +46,10 @@ impl FullTextIndex {
             let all_aliases = [node.aliases.as_slice(), node.aliases_vi.as_slice()].concat();
 
             writer.add_document(doc!(
-                id_field => &node.id,
-                label_field => &node.label,
+                id_field => node.id.clone(),
+                label_field => node.label.clone(),
                 label_vi_field => node.label_vi.as_deref().unwrap_or(""),
-                description_field => &node.description,
+                description_field => node.description.clone(),
                 aliases_field => all_aliases.join("; "),
                 node_type_field => format!("{:?}", node.node_type),
             ))?;

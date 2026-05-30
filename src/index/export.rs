@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use chrono::Datelike;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
@@ -115,7 +116,7 @@ pub fn export_graph_to_json(graph: &HyperGraph, output_dir: &Path) -> Result<()>
             crawled_at: chrono::Utc::now().to_rfc3339(),
             entity_count: nodes.len(),
             edge_count: edges.len(),
-            search_fields: &["label", "label_vi", "description", "aliases"],
+            search_fields: vec!["label", "label_vi", "description", "aliases"],
             query_endpoint: "https://query.wikidata.org/sparql",
         },
         nodes,

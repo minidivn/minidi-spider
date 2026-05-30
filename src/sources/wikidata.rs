@@ -34,7 +34,7 @@ pub const ALL_PARTITIONS: &[PartitionDef] = &[
         name: "adm-vn-country",
         description: "Vietnam country entity + neighbors",
         category: "admin",
-        filter: "?item = wd:Q881",
+        filter: "",
     },
     PartitionDef {
         name: "adm-north-provinces",
@@ -405,17 +405,16 @@ LIMIT 2000
 fn entity_claims_query(qid: &str) -> String {
     format!(
         r#"
-SELECT ?property ?propertyLabel ?value ?valueLabel WHERE {{
-  wd:{qid} ?prop ?valueNode .
-  ?property wikibase:directClaim ?prop .
-  OPTIONAL {{ ?valueNode rdfs:label ?valueLabel . FILTER(LANG(?valueLabel) = "en") }}
-  OPTIONAL {{ ?property rdfs:label ?propertyLabel . FILTER(LANG(?propertyLabel) = "en") }}
-  FILTER(STRSTARTS(STR(?property), "http://www.wikidata.org/entity/P"))
-  FILTER(STRSTARTS(STR(?valueNode), "http://www.wikidata.org/entity/Q"))
-}}
-LIMIT 200
-"#,
-        qid
+        SELECT ?property ?propertyLabel ?value ?valueLabel WHERE {{
+          wd:{qid} ?prop ?valueNode .
+          ?property wikibase:directClaim ?prop .
+          OPTIONAL {{ ?valueNode rdfs:label ?valueLabel . FILTER(LANG(?valueLabel) = "en") }}
+          OPTIONAL {{ ?property rdfs:label ?propertyLabel . FILTER(LANG(?propertyLabel) = "en") }}
+          FILTER(STRSTARTS(STR(?property), "http://www.wikidata.org/entity/P"))
+          FILTER(STRSTARTS(STR(?valueNode), "http://www.wikidata.org/entity/Q"))
+        }}
+        LIMIT 200
+        "#
     )
 }
 
@@ -441,15 +440,15 @@ impl DataSource for WikiDataSource {
                 "artifact".into(),
             ],
             properties: vec![
-                "P150 (contains admin division)",
-                "P131 (located in)",
-                "P17 (country)",
-                "P31 (instance of)",
-                "P580 (start time)",
-                "P585 (point in time)",
-                "P569 (date of birth)",
-                "P106 (occupation)",
-                "P625 (coordinate location)",
+                "P150 (contains admin division)".into(),
+                "P131 (located in)".into(),
+                "P17 (country)".into(),
+                "P31 (instance of)".into(),
+                "P580 (start time)".into(),
+                "P585 (point in time)".into(),
+                "P569 (date of birth)".into(),
+                "P106 (occupation)".into(),
+                "P625 (coordinate location)".into(),
             ],
             metadata_fields: HashMap::from([
                 ("coordinates".into(), "Geo: latitude/longitude".into()),
@@ -470,7 +469,7 @@ impl DataSource for WikiDataSource {
         let mut seen_ids = std::collections::HashSet::new();
 
         // Determine which dataset(s) to crawl
-        let datasets: Vec<(&str, &str, Option<String>)> = if let Some(ref pname) = ctx.partition {
+        let datasets: Vec<(&str, String, Option<String>)> = if let Some(ref pname) = ctx.partition {
             // Single partition mode
             let part = find_partition(pname).ok_or_else(|| {
                 anyhow::anyhow!(
@@ -486,10 +485,10 @@ impl DataSource for WikiDataSource {
         } else {
             // Full crawl: run all 4 datasets
             vec![
-                ("admin_divisions", "full", None),
-                ("history_events", "full", None),
-                ("people", "full", None),
-                ("heritage", "full", None),
+                ("admin_divisions", "full", None::<String>),
+                ("history_events", "full", None::<String>),
+                ("people", "full", None::<String>),
+                ("heritage", "full", None::<String>),
             ]
             .into_iter()
             .map(|(n, _, _)| {
@@ -505,7 +504,7 @@ impl DataSource for WikiDataSource {
                 } else {
                     q
                 };
-                (n, Some(final_q))
+                (n, final_q, None)
             })
             .collect::<Vec<_>>()
         };
@@ -514,11 +513,8 @@ impl DataSource for WikiDataSource {
             .progress
             .then(|| ProgressBar::new_spinner().with_message("[wikidata] crawling..."));
 
-        for (name, query_opt, _) in &datasets {
-            let q = match query_opt {
-                Some(q) => q.clone(),
-                None => continue,
-            };
+        for (name, query_str, _) in &datasets {
+            let q = query_str.clone();
 
             match self.exec_sparql(&ctx.client, &q).await {
                 Ok(json) => {
@@ -637,8 +633,10 @@ impl WikiDataSource {
         let resp = client
             .post(WDQS_URL)
             .query(&[("format", "json")])
-            .body(query.to_string())
+            // Must send query as URL-encoded form or with proper content-type
             .header("Accept", "application/sparql-results+json")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(format!("query={}", url_encode(query)))
             .send()
             .await
             .context("SPARQL request failed")?;
@@ -750,6 +748,23 @@ fn extract_qid(uri: &str) -> Option<String> {
         .map(|s| s.to_string())
 }
 
+fn url_encode(s: &str) -> String {
+    // Manual URL encoding for SPARQL queries (space → +, special chars → %XX)
+    let mut out = String::with_capacity(s.len() * 2);
+    for byte in s.bytes() {
+        match byte {
+            b' ' => out.push('+'),
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(byte as char);
+            }
+            _ => {
+                out.push_str(&format!("%{:02X}", byte));
+            }
+        }
+    }
+    out
+}
+
 fn apply_limit(query: &str, limit: usize) -> String {
     // Replace LIMIT clause if present
     let lowered = query.to_lowercase();
@@ -822,7 +837,7 @@ fn binding_to_node(row: &HashMap<String, String>, dataset: &str) -> Option<Hyper
     }
 
     Some(HyperNode {
-        id,
+        id: id.clone(),
         label,
         label_vi: None,
         description,
@@ -830,7 +845,7 @@ fn binding_to_node(row: &HashMap<String, String>, dataset: &str) -> Option<Hyper
         aliases: Vec::new(),
         aliases_vi: Vec::new(),
         node_type,
-        wikidata_url: format!("https://www.wikidata.org/wiki/{}", &id),
+        wikidata_url: format!("https://www.wikidata.org/wiki/{id}"),
         metadata,
     })
 }

@@ -118,7 +118,9 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Command::Sources => cmd_sources(),
+        Command::Sources => {
+            cmd_sources()?;
+        }
         Command::Crawl {
             db,
             source,
@@ -190,18 +192,18 @@ async fn cmd_crawl(
     let registry = build_registry();
     let ctx = CrawlContext::new(limit, progress, partition.clone())?;
 
-    let targets: Vec<&str> = if sources.is_empty() {
+    let targets: Vec<String> = if sources.is_empty() {
         registry
             .all()
             .iter()
-            .map(|s| s.schema().name.as_str())
+            .map(|s| s.schema().name.clone())
             .collect()
     } else {
-        sources.iter().map(|s| s.as_str()).collect()
+        sources.iter().map(|s| s.clone()).collect()
     };
 
     for source_name in targets {
-        let source = match registry.get(source_name) {
+        let source = match registry.get(&source_name) {
             Some(s) => s,
             None => {
                 tracing::warn!("Unknown source: {}. Skipping.", source_name);
