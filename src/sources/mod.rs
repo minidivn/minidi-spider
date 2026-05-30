@@ -52,7 +52,7 @@ impl CrawlContext {
     pub fn new(limit: usize, progress: bool) -> Result<Self> {
         let client = reqwest::Client::builder()
             .user_agent(format!(
-                "MinidiSpider/0.1 (+https://github.com/midivn/minidi-spider)"
+                "MinidiSpider/0.1 (+https://github.com/minidivn/minidi-spider)"
             ))
             .timeout(std::time::Duration::from_secs(120))
             .gzip(true)
