@@ -16,7 +16,7 @@ set -e
 
 # ── Config ──────────────────────────────────────────────────────────────────
 # Point this to your local data repo (outside the spider project)
-DATA_REPO="G:/i2c/PROJECTS/MiniPlatform/MiniDi/Data"
+DATA_REPO="G:/i2c/PROJECTS/MiniPlatform/MiniDi/Data/minidi-vn-data"
 SPIDER_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 CURSOR="$DATA_REPO/_data/cursor.json"
 SPIDER_DB="/tmp/minidi-spider-poc.db"
