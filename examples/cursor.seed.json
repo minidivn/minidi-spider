@@ -1,0 +1,22 @@
+{
+  "current_partition": "adm-vn-country",
+  "completed": [],
+  "remaining": [
+    "adm-north-provinces", "adm-central-provinces", "adm-south-provinces",
+    "adm-highlands", "adm-hanoi", "adm-hcmc", "adm-danang", "adm-haiphong", "adm-cantho",
+    "hist-paleolithic", "hist-hongbang", "hist-chinese-dom", "hist-ngo-dinh-le",
+    "hist-ly", "hist-tran", "hist-le-so", "hist-tay-son", "hist-nguyen",
+    "hist-colonial", "hist-vn-war", "hist-modern",
+    "people-rulers", "people-military", "people-writers", "people-scientists",
+    "people-artists", "people-revolution", "people-religion", "people-educators",
+    "people-politicians", "people-sports", "people-business", "people-foreign",
+    "people-royalty", "people-contemporary",
+    "culture-heritage", "culture-festivals", "culture-religion", "culture-cuisine",
+    "culture-music", "culture-architecture", "culture-clothing", "culture-oral",
+    "nature-rivers", "nature-mountains", "nature-national-parks", "nature-islands",
+    "nature-beaches", "nature-caves"
+  ],
+  "total": 50,
+  "progress": "0/50",
+  "updated_at": "2025-01-01T00:00:00Z"
+}
