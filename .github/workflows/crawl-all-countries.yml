@@ -103,7 +103,7 @@ for c in cfg['countries']:
           cargo run --release -- export \
             --country "${COUNTRY}" \
             --db "data/${COUNTRY}/spider.db" \
-            --output "../${REPO_NAME}" \
+            --output "../${REPO_NAME}/docs" \
             ${{ inputs.embeddings == 'true' && '--embeddings' || '' }}
         timeout-minutes: 10
 
@@ -142,7 +142,7 @@ for c in cfg['countries']:
           # Entity counts
           ENTITIES=$(python3 -c "
 import json
-with open('../${REPO_NAME}/_data/index.json') as f:
+with open('../${REPO_NAME}/docs/_data/index.json') as f:
     d = json.load(f)
 print(d['meta']['entity_count'], d['meta']['edge_count'], sep='|')
 " 2>/dev/null || echo "0|0")
