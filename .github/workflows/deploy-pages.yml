@@ -27,7 +27,7 @@ jobs:
         run: |
           python3 -c "
           import json, sys
-          with open('docs/index.json') as f:
+          with open('docs/_data/index.json') as f:
               d = json.load(f)
           assert 'meta' in d, 'Missing meta'
           assert 'nodes' in d, 'Missing nodes'
@@ -42,7 +42,7 @@ jobs:
         run: |
           python3 -c "
           import json, sys
-          with open('docs/index.lite.json') as f:
+          with open('docs/_data/index.lite.json') as f:
               nodes = json.load(f)
           assert isinstance(nodes, list), 'Not a list'
           for n in nodes:

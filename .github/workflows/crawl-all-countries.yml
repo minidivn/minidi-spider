@@ -1,0 +1,242 @@
+name: Crawl & Push All Countries
+
+on:
+  schedule:
+    # Every Sunday at 08:00 UTC (staggered after the default weekly crawl)
+    - cron: '0 8 * * 0'
+  workflow_dispatch:
+    inputs:
+      country:
+        description: 'Country code to crawl (e.g. vn, en, zh). Leave blank for all.'
+        required: false
+        default: ''
+      limit:
+        description: 'Max entities per dataset (0 = no limit)'
+        required: false
+        default: '0'
+      embeddings:
+        description: 'Compute BOW embeddings'
+        required: false
+        type: boolean
+        default: true
+
+env:
+  CARGO_TERM_COLORS: always
+  RUST_LOG: info
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # If a specific country is provided, only run that one
+        country: ${{ fromJSON(format('[{0}]', inputs.country || '"en","zh","hi","es","ar","fr","pt","ru","bn","de","vn"')) }}
+    steps:
+      - name: Derive config from country code
+        id: config
+        run: |
+          # Load from countries.json at runtime
+          echo "country_code=${{ matrix.country }}" >> $GITHUB_OUTPUT
+
+      - name: Checkout minidi-spider repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          path: spider
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            spider/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('spider/**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build minidi-spider (release)
+        run: cargo build --release
+        working-directory: spider
+        timeout-minutes: 15
+
+      - name: Crawl WikiData for country
+        id: crawl
+        run: |
+          cd spider
+          COUNTRY="${{ matrix.country }}"
+          mkdir -p "data/${COUNTRY}"
+
+          echo "🌍 Crawling for country: ${COUNTRY}"
+          cargo run --release -- crawl \
+            --country "${COUNTRY}" \
+            --db "data/${COUNTRY}/spider.db" \
+            --progress \
+            ${{ inputs.limit != '' && inputs.limit != '0' && format('--limit {0}', inputs.limit) || '' }}
+
+          # Get country info from config
+          COUNTRY_NAME=$(python3 -c "
+import json
+with open('countries.json') as f:
+    cfg = json.load(f)
+for c in cfg['countries']:
+    if c['code'] == '${COUNTRY}':
+        print(c['name'], c['qid'], c['repo'], c['language'], c['language_name'], sep='|')
+        break
+")
+          echo "country_info=${COUNTRY_NAME}" >> $GITHUB_OUTPUT
+        timeout-minutes: 30
+
+      - name: Export data
+        run: |
+          cd spider
+          COUNTRY="${{ matrix.country }}"
+          REPO_NAME=$(echo "${{ steps.crawl.outputs.country_info }}" | cut -d'|' -f3)
+
+          # Create data repo structure
+          mkdir -p "../${REPO_NAME}"
+
+          cargo run --release -- export \
+            --country "${COUNTRY}" \
+            --db "data/${COUNTRY}/spider.db" \
+            --output "../${REPO_NAME}" \
+            ${{ inputs.embeddings == 'true' && '--embeddings' || '' }}
+        timeout-minutes: 10
+
+      - name: Generate provenance metadata
+        run: |
+          cd spider
+          COUNTRY="${{ matrix.country }}"
+          REPO_NAME=$(echo "${{ steps.crawl.outputs.country_info }}" | cut -d'|' -f3)
+          COUNTRY_NAME=$(echo "${{ steps.crawl.outputs.country_info }}" | cut -d'|' -f1)
+          COUNTRY_QID=$(echo "${{ steps.crawl.outputs.country_info }}" | cut -d'|' -f2)
+          LANGUAGE_NAME=$(echo "${{ steps.crawl.outputs.country_info }}" | cut -d'|' -f5)
+
+          mkdir -p "../${REPO_NAME}/_metadata"
+
+          cat > "../${REPO_NAME}/_metadata/provenance.json" << EOF
+          {
+            "generated_by": "minidi-spider",
+            "version": "$(cargo run --release -- --version 2>/dev/null || echo 'unknown')",
+            "country": {
+              "code": "${COUNTRY}",
+              "name": "${COUNTRY_NAME}",
+              "qid": "${COUNTRY_QID}",
+              "language": "${LANGUAGE_NAME}"
+            },
+            "source": "https://query.wikidata.org/sparql",
+            "queries": [
+              "QUERY_PLACES (P17 = country)",
+              "QUERY_PEOPLE (P27 = citizenship / P19 = birth place)",
+              "QUERY_EVENTS (P276 = location / P17 = country / P710 = participant)"
+            ],
+            "crawl_timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "workflow_run": "${{ github.run_id }}"
+          }
+          EOF
+
+          # Entity counts
+          ENTITIES=$(python3 -c "
+import json
+with open('../${REPO_NAME}/_data/index.json') as f:
+    d = json.load(f)
+print(d['meta']['entity_count'], d['meta']['edge_count'], sep='|')
+" 2>/dev/null || echo "0|0")
+          ENTITY_COUNT=$(echo "$ENTITIES" | cut -d'|' -f1)
+          EDGE_COUNT=$(echo "$ENTITIES" | cut -d'|' -f2)
+
+          cat > "../${REPO_NAME}/_metadata/crawl-report-latest.json" << EOF
+          {
+            "crawl_timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "workflow_run": "${{ github.run_id }}",
+            "country": "${COUNTRY}",
+            "entity_count": $ENTITY_COUNT,
+            "edge_count": $EDGE_COUNT,
+            "status": "success"
+          }
+          EOF
+
+      - name: Push to country data repo
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          COUNTRY="${{ matrix.country }}"
+          REPO_NAME=$(echo "${{ steps.crawl.outputs.country_info }}" | cut -d'|' -f3)
+          GITHUB_ORG="${{ github.repository_owner }}"
+
+          echo "📦 Pushing to ${GITHUB_ORG}/${REPO_NAME}"
+
+          cd "../${REPO_NAME}"
+
+          # Initialize git repo
+          git init
+          git config user.name "minidi-spider[bot]"
+          git config user.email "minidi-spider[bot]@users.noreply.github.com"
+
+          # Create .gitignore for data repos
+          cat > .gitignore << 'GITIGNORE'
+          # No build artifacts in data repos
+          *.db
+          *.db-wal
+          *.db-shm
+          data/
+          GITIGNORE
+
+          # Add everything
+          git add -A
+          git commit -m "chore(data): ${COUNTRY} crawl $(date -u +%Y-%m-%d)" --allow-empty
+
+          # Check if repo exists, create if not
+          REPO_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token ${GH_PAT}" \
+            "https://api.github.com/repos/${GITHUB_ORG}/${REPO_NAME}" || echo "404")
+
+          if [ "$REPO_EXISTS" = "404" ]; then
+            echo "🆕 Creating new repo: ${REPO_NAME}"
+            curl -s -X POST \
+              -H "Authorization: token ${GH_PAT}" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"name\": \"${REPO_NAME}\",
+                \"description\": \"MiniData for ${COUNTRY_NAME} — WikiData hypergraph\",
+                \"homepage\": \"https://${GITHUB_ORG}.github.io/${REPO_NAME}/\",
+                \"private\": false,
+                \"auto_init\": false
+              }" \
+              "https://api.github.com/orgs/${GITHUB_ORG}/repos" || \
+            curl -s -X POST \
+              -H "Authorization: token ${GH_PAT}" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"name\": \"${REPO_NAME}\",
+                \"description\": \"MiniData for ${COUNTRY} — WikiData hypergraph\",
+                \"homepage\": \"https://${GITHUB_ORG}.github.io/${REPO_NAME}/\",
+                \"private\": false,
+                \"auto_init\": false
+              }" \
+              "https://api.github.com/user/repos"
+
+            # Enable GitHub Pages on the new repo
+            sleep 2
+            curl -s -X POST \
+              -H "Authorization: token ${GH_PAT}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              -d "{\"source\": {\"branch\": \"main\", \"path\": \"/\"}}" \
+              "https://api.github.com/repos/${GITHUB_ORG}/${REPO_NAME}/pages" || true
+          fi
+
+          # Push to the repo
+          git remote add origin "https://x-access-token:${GH_PAT}@github.com/${GITHUB_ORG}/${REPO_NAME}.git"
+
+          # Try pushing to main; if main doesn't exist, create the branch
+          git branch -M main
+          git push -u origin main --force 2>&1 || {
+            echo "First push failed, retrying..."
+            git push -u origin main --force
+          }
+
+          echo "✅ Pushed to https://github.com/${GITHUB_ORG}/${REPO_NAME}"

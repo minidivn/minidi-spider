@@ -1,4 +1,4 @@
-name: Weekly WikiData Crawl
+name: Weekly WikiData Crawl (Default Country)
 
 on:
   schedule:
@@ -6,15 +6,14 @@ on:
     - cron: '0 6 * * 0'
   workflow_dispatch:
     inputs:
+      country:
+        description: 'Country code (default from countries.json)'
+        required: false
+        default: ''
       limit:
         description: 'Max entities per dataset (0 = no limit)'
         required: false
         default: '0'
-      skip_edges:
-        description: 'Skip edge fetching (faster)'
-        required: false
-        type: boolean
-        default: false
 
 env:
   CARGO_TERM_COLORS: always
@@ -32,12 +31,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: develop
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-unknown-linux-gnu
 
       - name: Cache cargo dependencies
         uses: actions/cache@v4
@@ -55,65 +51,100 @@ jobs:
         timeout-minutes: 15
 
       - name: Run crawl
+        id: crawl
         run: |
           mkdir -p data
-          cargo run --release -- crawl --db data/spider.db --progress \
+          COUNTRY="${{ inputs.country }}"
+
+          if [ -n "$COUNTRY" ]; then
+            FLAG="--country ${COUNTRY}"
+            echo "country_code=${COUNTRY}" >> $GITHUB_OUTPUT
+          else
+            # Read default from countries.json
+            COUNTRY=$(python3 -c "import json; print(json.load(open('countries.json'))['default_country'])")
+            FLAG="--country ${COUNTRY}"
+            echo "country_code=${COUNTRY}" >> $GITHUB_OUTPUT
+          fi
+
+          echo "🌍 Crawling for country: ${COUNTRY}"
+          cargo run --release -- crawl \
+            --db data/spider.db \
+            --progress \
+            ${FLAG} \
             ${{ inputs.limit != '' && inputs.limit != '0' && format('--limit {0}', inputs.limit) || '' }}
         timeout-minutes: 30
 
-      - name: Export to docs/
+      - name: Export to output directory
         run: |
-          cargo run --release -- export --db data/spider.db --output docs --embeddings
+          COUNTRY="${{ steps.crawl.outputs.country_code }}"
+          OUTPUT_DIR="docs"
+
+          cargo run --release -- export \
+            --country "${COUNTRY}" \
+            --db data/spider.db \
+            --output "${OUTPUT_DIR}" \
+            --embeddings
         timeout-minutes: 10
 
       - name: Generate crawl report
         run: |
           mkdir -p docs/_metadata
-          ENTITIES=$(python3 -c "import json; d=json.load(open('docs/index.json')); print(d['meta']['entity_count'])")
-          EDGES=$(python3 -c "import json; d=json.load(open('docs/index.json')); print(d['meta']['edge_count'])")
+          COUNTRY="${{ steps.crawl.outputs.country_code }}"
+
+          ENTITIES=$(python3 -c "import json; d=json.load(open('docs/_data/index.json')); print(d['meta']['entity_count'])")
+          EDGES=$(python3 -c "import json; d=json.load(open('docs/_data/index.json')); print(d['meta']['edge_count'])")
 
           cat > docs/_metadata/crawl-report-latest.json << EOF
           {
             "crawl_timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "workflow_run": "${{ github.run_id }}",
+            "country": "${COUNTRY}",
             "entity_count": $ENTITIES,
             "edge_count": $EDGES,
-            "binary_version": "$(cargo run --release -- --version 2>/dev/null || echo 'unknown')",
             "status": "success"
           }
           EOF
 
       - name: Regenerate provenance
         run: |
+          COUNTRY="${{ steps.crawl.outputs.country_code }}"
+          COUNTRY_NAME=$(python3 -c "
+import json
+with open('countries.json') as f:
+    cfg = json.load(f)
+for c in cfg['countries']:
+    if c['code'] == '${COUNTRY}':
+        print(c['name'])
+        break
+" 2>/dev/null || echo "${COUNTRY}")
+
           cat > docs/_metadata/provenance.json << EOF
           {
             "generated_by": "minidi-spider",
             "source": "https://query.wikidata.org/sparql",
+            "country": "${COUNTRY}",
+            "country_name": "${COUNTRY_NAME}",
             "queries": [
-              "crawler/sparql.rs:VIETNAM_ADMIN_DIVISIONS",
-              "crawler/sparql.rs:VIETNAM_HISTORY_EVENTS",
-              "crawler/sparql.rs:VIETNAM_PEOPLE",
-              "crawler/sparql.rs:VIETNAM_HERITAGE"
+              "wikidata.rs:QUERY_PLACES",
+              "wikidata.rs:QUERY_PEOPLE",
+              "wikidata.rs:QUERY_EVENTS"
             ],
             "crawl_timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           }
           EOF
 
-      - name: Commit to develop
+      - name: Commit and create PR
         run: |
           git config user.name "minidi-spider[bot]"
           git config user.email "minidi-spider[bot]@users.noreply.github.com"
 
-          # Only commit if docs/ changed
           git add docs/ data/
           if git diff --cached --quiet; then
             echo "No changes to commit"
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
-            git commit -m "chore(data): weekly crawl $(date -u +%Y-%m-%d)
-
-            Auto-committed by minidi-spider crawl-weekly workflow"
-            git push origin develop
+            git commit -m "chore(data): weekly crawl $(date -u +%Y-%m-%d)"
+            git push origin HEAD:$(git rev-parse --abbrev-ref HEAD)
             echo "has_changes=true" >> $GITHUB_OUTPUT
           fi
         id: commit
@@ -123,23 +154,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Check if PR already exists
-          PR_NUM=$(gh pr list --head develop --base main --json number --jq '.[0].number' 2>/dev/null || echo "")
+          PR_NUM=$(gh pr list --head $(git rev-parse --abbrev-ref HEAD) --base main --json number --jq '.[0].number' 2>/dev/null || echo "")
+          COUNTRY="${{ steps.crawl.outputs.country_code }}"
 
           if [ -z "$PR_NUM" ]; then
             gh pr create \
               --base main \
-              --head develop \
+              --head $(git rev-parse --abbrev-ref HEAD) \
               --title "chore(data): weekly data refresh $(date -u +%Y-%m-%d)" \
-              --body "**Automated weekly crawl.** See _metadata/crawl-report-latest.json for stats.
-
-            - Source: WikiData SPARQL (Vietnam entities)
-            - Generated by minidi-spider crawl-weekly workflow
-            - Review & merge to publish to GitHub Pages
-
-            > ⚠️ This is an automated PR. Validate docs/index.json structure before merging."
+              --body "**Automated weekly crawl for ${COUNTRY}.** See _metadata/crawl-report-latest.json for stats."
           else
             gh pr edit $PR_NUM \
-              --title "chore(data): weekly data refresh $(date -u +%Y-%m-%d)" \
-              --body "Updated crawl. Previous PR body applies."
+              --title "chore(data): weekly data refresh $(date -u +%Y-%m-%d)"
           fi
