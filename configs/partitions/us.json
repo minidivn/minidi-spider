@@ -8,6 +8,14 @@
     "limit": 100
   },
   {
+    "name": "custom-landmarks",
+    "description": "Explicitly requested US landmarks for highlights",
+    "category": "places",
+    "query_inline": "SELECT DISTINCT ?item ?itemLabel ?itemDescription ?coords WHERE { VALUES ?item { wd:Q61 wd:Q9284 } OPTIONAL { ?item wdt:P625 ?coords . } SERVICE wikibase:label { bd:serviceParam wikibase:language \"{LANG},en\" . } } LIMIT 100",
+    "node_type": "Place",
+    "limit": 100
+  },
+  {
     "name": "adm-federal",
     "description": "United States federal entity and District of Columbia",
     "category": "admin",
