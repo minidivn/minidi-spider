@@ -1,0 +1,186 @@
+{
+  "comment": "Top 10 most spoken languages by total speakers (Ethnologue 2023). Each country references an external partition file for its crawl strategy.",
+  "default_country": "vn",
+  "output_parent": "../../Minidi/Data",
+  "partition_dir": "configs/partitions",
+  "query_dir": "configs/queries",
+  "default_crawl_settings": {
+    "max_edges_per_node": 50,
+    "rate_limit_ms": 200,
+    "request_timeout_secs": 120,
+    "max_retries": 3,
+    "link_traversal_depth": 2,
+    "max_wikipedia_articles": 500000
+  },
+  "countries": [
+    {
+      "code": "vn",
+      "name": "Vietnam",
+      "qid": "Q881",
+      "language": "vi",
+      "language_name": "Vietnamese",
+      "repo": "minidi-data-country.vn",
+      "native_label": true,
+      "wikipedia": {
+        "api": "https://vi.wikipedia.org/w/api.php",
+        "language": "vi"
+      },
+      "partition_file": "vn.json",
+      "sparql_endpoint": "https://query.wikidata.org/sparql"
+    },
+    {
+      "code": "en",
+      "name": "England",
+      "qid": "Q21",
+      "language": "en",
+      "language_name": "English",
+      "repo": "minidi-data-country.en",
+      "native_label": true,
+      "wikipedia": {
+        "api": "https://en.wikipedia.org/w/api.php",
+        "language": "en"
+      },
+      "partition_file": "default.json"
+    },
+    {
+      "code": "us",
+      "name": "United States",
+      "qid": "Q30",
+      "language": "en",
+      "language_name": "English",
+      "repo": "minidi-data-country.us",
+      "native_label": false,
+      "wikipedia": {
+        "api": "https://en.wikipedia.org/w/api.php",
+        "language": "en"
+      },
+      "partition_file": "us.json"
+    },
+    {
+      "code": "zh",
+      "name": "China",
+      "qid": "Q148",
+      "language": "zh",
+      "language_name": "Chinese (Mandarin)",
+      "repo": "minidi-data-country.zh",
+      "native_label": true,
+      "wikipedia": {
+        "api": "https://zh.wikipedia.org/w/api.php",
+        "language": "zh"
+      },
+      "partition_file": "zh.json"
+    },
+    {
+      "code": "hi",
+      "name": "India",
+      "qid": "Q668",
+      "language": "hi",
+      "language_name": "Hindi",
+      "repo": "minidi-data-country.hi",
+      "native_label": true,
+      "wikipedia": {
+        "api": "https://hi.wikipedia.org/w/api.php",
+        "language": "hi"
+      },
+      "partition_file": "default.json"
+    },
+    {
+      "code": "es",
+      "name": "Spain",
+      "qid": "Q29",
+      "language": "es",
+      "language_name": "Spanish",
+      "repo": "minidi-data-country.es",
+      "native_label": true,
+      "wikipedia": {
+        "api": "https://es.wikipedia.org/w/api.php",
+        "language": "es"
+      },
+      "partition_file": "default.json"
+    },
+    {
+      "code": "ar",
+      "name": "Egypt",
+      "qid": "Q79",
+      "language": "ar",
+      "language_name": "Arabic",
+      "repo": "minidi-data-country.ar",
+      "native_label": true,
+      "wikipedia": {
+        "api": "https://ar.wikipedia.org/w/api.php",
+        "language": "ar"
+      },
+      "partition_file": "default.json"
+    },
+    {
+      "code": "fr",
+      "name": "France",
+      "qid": "Q142",
+      "language": "fr",
+      "language_name": "French",
+      "repo": "minidi-data-country.fr",
+      "native_label": true,
+      "wikipedia": {
+        "api": "https://fr.wikipedia.org/w/api.php",
+        "language": "fr"
+      },
+      "partition_file": "default.json"
+    },
+    {
+      "code": "pt",
+      "name": "Brazil",
+      "qid": "Q155",
+      "language": "pt",
+      "language_name": "Portuguese",
+      "repo": "minidi-data-country.pt",
+      "native_label": true,
+      "wikipedia": {
+        "api": "https://pt.wikipedia.org/w/api.php",
+        "language": "pt"
+      },
+      "partition_file": "default.json"
+    },
+    {
+      "code": "ru",
+      "name": "Russia",
+      "qid": "Q159",
+      "language": "ru",
+      "language_name": "Russian",
+      "repo": "minidi-data-country.ru",
+      "native_label": true,
+      "wikipedia": {
+        "api": "https://ru.wikipedia.org/w/api.php",
+        "language": "ru"
+      },
+      "partition_file": "default.json"
+    },
+    {
+      "code": "bn",
+      "name": "Bangladesh",
+      "qid": "Q902",
+      "language": "bn",
+      "language_name": "Bengali",
+      "repo": "minidi-data-country.bn",
+      "native_label": true,
+      "wikipedia": {
+        "api": "https://bn.wikipedia.org/w/api.php",
+        "language": "bn"
+      },
+      "partition_file": "default.json"
+    },
+    {
+      "code": "de",
+      "name": "Germany",
+      "qid": "Q183",
+      "language": "de",
+      "language_name": "German",
+      "repo": "minidi-data-country.de",
+      "native_label": true,
+      "wikipedia": {
+        "api": "https://de.wikipedia.org/w/api.php",
+        "language": "de"
+      },
+      "partition_file": "default.json"
+    }
+  ]
+}
