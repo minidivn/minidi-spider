@@ -8,6 +8,14 @@
     "limit": 100
   },
   {
+    "name": "custom-landmarks",
+    "description": "Explicitly requested landmarks for highlights",
+    "category": "places",
+    "query_inline": "SELECT DISTINCT ?place ?placeLabel ?placeDescription ?coords WHERE { VALUES ?place { wd:Q84 wd:Q11271 } OPTIONAL { ?place wdt:P625 ?coords . } SERVICE wikibase:label { bd:serviceParam wikibase:language \"{LANG},en\" . } } LIMIT 100",
+    "node_type": "Place",
+    "limit": 100
+  },
+  {
     "name": "places",
     "description": "All geographic places and locations in the country",
     "category": "admin",
