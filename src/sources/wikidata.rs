@@ -13,367 +13,26 @@ use super::{CrawlContext, CrawlResult, DataSource, SourceSchema};
 const WDQS_URL: &str = "https://query.wikidata.org/sparql";
 const WIKI_API: &str = "https://www.wikidata.org/w/api.php";
 
-// ── Partition Definitions ───────────────────────────────────────
+// ── Generic SPARQL Templates ────────────────────────────────────
+// {COUNTRY_QID} is substituted at crawl time.
+// {LANG} is the label language (e.g. "en", "vi", "zh").
 
-/// A crawlable partition that maps to a subset of WikiData queries.
-pub struct PartitionDef {
-    pub name: &'static str,
-    pub description: &'static str,
-    /// Base query category: "admin", "history", "people", "heritage"
-    pub category: &'static str,
-    /// Optional SPARQL FILTER snippet (appended to base query WHERE clause).
-    /// Empty string = no filter.
-    pub filter: &'static str,
-}
-
-/// All 50 partitions for gradual data fill.
-/// Each partition crawls a focused subset and can be committed independently.
-pub const ALL_PARTITIONS: &[PartitionDef] = &[
-    // ── Tier 1: Geography / Admin Divisions (10) ──
-    PartitionDef {
-        name: "adm-vn-country",
-        description: "Vietnam country entity + neighbors",
-        category: "admin",
-        filter: "",
-    },
-    PartitionDef {
-        name: "adm-north-provinces",
-        description: "Northern provinces (Red River Delta, Northeast, Northwest)",
-        category: "admin",
-        filter: "",
-    },
-    PartitionDef {
-        name: "adm-central-provinces",
-        description: "North Central Coast provinces",
-        category: "admin",
-        filter: "",
-    },
-    PartitionDef {
-        name: "adm-south-provinces",
-        description: "Southern provinces (Southeast, Mekong Delta)",
-        category: "admin",
-        filter: "",
-    },
-    PartitionDef {
-        name: "adm-highlands",
-        description: "Central Highlands (Tây Nguyên) provinces",
-        category: "admin",
-        filter: "",
-    },
-    PartitionDef {
-        name: "adm-hanoi",
-        description: "Hanoi districts and communes",
-        category: "admin",
-        filter: "",
-    },
-    PartitionDef {
-        name: "adm-hcmc",
-        description: "Ho Chi Minh City districts and communes",
-        category: "admin",
-        filter: "",
-    },
-    PartitionDef {
-        name: "adm-danang",
-        description: "Da Nang city districts",
-        category: "admin",
-        filter: "",
-    },
-    PartitionDef {
-        name: "adm-haiphong",
-        description: "Hai Phong city districts",
-        category: "admin",
-        filter: "",
-    },
-    PartitionDef {
-        name: "adm-cantho",
-        description: "Can Tho city districts",
-        category: "admin",
-        filter: "",
-    },
-    // ── Tier 2: History by Era (12) ──
-    PartitionDef {
-        name: "hist-paleolithic",
-        description: "Paleolithic cultures (Sơn Vi, Hòa Bình, Đông Sơn)",
-        category: "history",
-        filter: "FILTER(YEAR(?pointInTime) < -1000)",
-    },
-    PartitionDef {
-        name: "hist-hongbang",
-        description: "Hồng Bàng dynasty (2879–258 BCE)",
-        category: "history",
-        filter: "FILTER(YEAR(?pointInTime) >= -2879 && YEAR(?pointInTime) < -258)",
-    },
-    PartitionDef {
-        name: "hist-chinese-dom",
-        description: "Chinese domination (111 BCE–939 CE)",
-        category: "history",
-        filter: "FILTER(YEAR(?pointInTime) >= -111 && YEAR(?pointInTime) < 939)",
-    },
-    PartitionDef {
-        name: "hist-ngo-dinh-le",
-        description: "Ngô-Đinh-Lê dynasties (939–1009)",
-        category: "history",
-        filter: "FILTER(YEAR(?pointInTime) >= 939 && YEAR(?pointInTime) < 1010)",
-    },
-    PartitionDef {
-        name: "hist-ly",
-        description: "Lý dynasty (1009–1225)",
-        category: "history",
-        filter: "FILTER(YEAR(?pointInTime) >= 1010 && YEAR(?pointInTime) < 1225)",
-    },
-    PartitionDef {
-        name: "hist-tran",
-        description: "Trần dynasty + Mongol invasions (1225–1400)",
-        category: "history",
-        filter: "FILTER(YEAR(?pointInTime) >= 1225 && YEAR(?pointInTime) < 1400)",
-    },
-    PartitionDef {
-        name: "hist-le-so",
-        description: "Later Lê dynasty (1428–1789)",
-        category: "history",
-        filter: "FILTER(YEAR(?pointInTime) >= 1428 && YEAR(?pointInTime) < 1789)",
-    },
-    PartitionDef {
-        name: "hist-tay-son",
-        description: "Tây Sơn dynasty (1778–1802)",
-        category: "history",
-        filter: "FILTER(YEAR(?pointInTime) >= 1778 && YEAR(?pointInTime) < 1802)",
-    },
-    PartitionDef {
-        name: "hist-nguyen",
-        description: "Nguyễn dynasty (1802–1945)",
-        category: "history",
-        filter: "FILTER(YEAR(?pointInTime) >= 1802 && YEAR(?pointInTime) < 1945)",
-    },
-    PartitionDef {
-        name: "hist-colonial",
-        description: "French colonial period (1858–1954)",
-        category: "history",
-        filter: "FILTER(YEAR(?pointInTime) >= 1858 && YEAR(?pointInTime) < 1954)",
-    },
-    PartitionDef {
-        name: "hist-vn-war",
-        description: "Vietnam War / American War (1955–1975)",
-        category: "history",
-        filter: "FILTER(YEAR(?pointInTime) >= 1955 && YEAR(?pointInTime) < 1975)",
-    },
-    PartitionDef {
-        name: "hist-modern",
-        description: "Modern Vietnam (1975–present)",
-        category: "history",
-        filter: "FILTER(YEAR(?pointInTime) >= 1975)",
-    },
-    // ── Tier 3: People by Occupation (14) ──
-    PartitionDef {
-        name: "people-rulers",
-        description: "Kings, emperors, presidents, prime ministers",
-        category: "people",
-        filter: "",
-    },
-    PartitionDef {
-        name: "people-military",
-        description: "Generals, strategists, war heroes",
-        category: "people",
-        filter: "",
-    },
-    PartitionDef {
-        name: "people-writers",
-        description: "Poets, writers, journalists",
-        category: "people",
-        filter: "",
-    },
-    PartitionDef {
-        name: "people-scientists",
-        description: "Scientists, inventors, doctors",
-        category: "people",
-        filter: "",
-    },
-    PartitionDef {
-        name: "people-artists",
-        description: "Painters, musicians, filmmakers",
-        category: "people",
-        filter: "",
-    },
-    PartitionDef {
-        name: "people-revolution",
-        description: "Revolutionaries, independence fighters",
-        category: "people",
-        filter: "",
-    },
-    PartitionDef {
-        name: "people-religion",
-        description: "Buddhist monks, religious figures",
-        category: "people",
-        filter: "",
-    },
-    PartitionDef {
-        name: "people-educators",
-        description: "Teachers, professors, scholars",
-        category: "people",
-        filter: "",
-    },
-    PartitionDef {
-        name: "people-politicians",
-        description: "Politicians, diplomats, officials",
-        category: "people",
-        filter: "",
-    },
-    PartitionDef {
-        name: "people-sports",
-        description: "Athletes, coaches, sports figures",
-        category: "people",
-        filter: "",
-    },
-    PartitionDef {
-        name: "people-business",
-        description: "Business people, entrepreneurs",
-        category: "people",
-        filter: "",
-    },
-    PartitionDef {
-        name: "people-foreign",
-        description: "Foreigners significant to Vietnam",
-        category: "people",
-        filter: "",
-    },
-    PartitionDef {
-        name: "people-royalty",
-        description: "Royal family members, consorts",
-        category: "people",
-        filter: "",
-    },
-    PartitionDef {
-        name: "people-contemporary",
-        description: "21st century contemporary figures",
-        category: "people",
-        filter: "",
-    },
-    // ── Tier 4: Culture & Heritage (8) ──
-    PartitionDef {
-        name: "culture-heritage",
-        description: "UNESCO World Heritage sites",
-        category: "heritage",
-        filter: "?item wdt:P31 wd:Q9259",
-    },
-    PartitionDef {
-        name: "culture-festivals",
-        description: "Festivals and celebrations",
-        category: "heritage",
-        filter: "?item wdt:P31 wd:Q132241",
-    },
-    PartitionDef {
-        name: "culture-religion",
-        description: "Temples, pagodas, churches, religious sites",
-        category: "heritage",
-        filter: "",
-    },
-    PartitionDef {
-        name: "culture-cuisine",
-        description: "Vietnamese dishes, ingredients, food culture",
-        category: "heritage",
-        filter: "",
-    },
-    PartitionDef {
-        name: "culture-music",
-        description: "Traditional music, instruments, performers",
-        category: "heritage",
-        filter: "",
-    },
-    PartitionDef {
-        name: "culture-architecture",
-        description: "Architectural works, monuments, landmarks",
-        category: "heritage",
-        filter: "",
-    },
-    PartitionDef {
-        name: "culture-clothing",
-        description: "Traditional dress (áo dài, etc.)",
-        category: "heritage",
-        filter: "",
-    },
-    PartitionDef {
-        name: "culture-oral",
-        description: "Intangible cultural heritage",
-        category: "heritage",
-        filter: "",
-    },
-    // ── Tier 5: Nature & Geography (6) ──
-    PartitionDef {
-        name: "nature-rivers",
-        description: "Rivers, waterways, deltas",
-        category: "heritage",
-        filter: "",
-    },
-    PartitionDef {
-        name: "nature-mountains",
-        description: "Mountains, passes, peaks",
-        category: "heritage",
-        filter: "",
-    },
-    PartitionDef {
-        name: "nature-national-parks",
-        description: "National parks, nature reserves",
-        category: "heritage",
-        filter: "?item wdt:P31 wd:Q916333",
-    },
-    PartitionDef {
-        name: "nature-islands",
-        description: "Islands, archipelagos",
-        category: "heritage",
-        filter: "",
-    },
-    PartitionDef {
-        name: "nature-beaches",
-        description: "Beaches, bays, coastal features",
-        category: "heritage",
-        filter: "",
-    },
-    PartitionDef {
-        name: "nature-caves",
-        description: "Caves, grottoes, karst formations",
-        category: "heritage",
-        filter: "",
-    },
-];
-
-pub fn find_partition(name: &str) -> Option<&'static PartitionDef> {
-    ALL_PARTITIONS.iter().find(|p| p.name == name)
-}
-
-// ── SPARQL Queries ──────────────────────────────────────────────
-
-const VIETNAM_ADMIN_DIVISIONS: &str = r#"
+/// Places / geography: entities located in the country.
+const QUERY_PLACES: &str = r#"
 SELECT DISTINCT ?item ?itemLabel ?itemDescription ?type ?typeLabel ?coord WHERE {
-  VALUES ?country { wd:Q881 }
-  ?country wdt:P150 ?item .
-  OPTIONAL { ?item wdt:P31 ?type . }
-  OPTIONAL { ?item wdt:P625 ?coord . }
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,vi" . }
-}
-LIMIT 1000
-"#;
-
-const VIETNAM_HISTORY_EVENTS: &str = r#"
-SELECT DISTINCT ?item ?itemLabel ?itemDescription ?type ?typeLabel ?pointInTime ?startTime ?endTime WHERE {
-  VALUES ?country { wd:Q881 }
-  { ?item wdt:P276 ?location . }
-  UNION
+  VALUES ?country { wd:{COUNTRY_QID} }
   { ?item wdt:P17 ?country . }
-  UNION
-  { ?item wdt:P710 ?participant . FILTER(?participant = wd:Q881) }
-  { ?item wdt:P585 ?pointInTime . }
-  UNION
-  { ?item wdt:P580 ?startTime . }
-  OPTIONAL { ?item wdt:P31 ?type . }
-  OPTIONAL { ?item wdt:P582 ?endTime . }
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,vi" . }
+  ?item wdt:P31 ?type .
+  OPTIONAL { ?item wdt:P625 ?coord . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "{LANG},en" . }
 }
-LIMIT 3000
+LIMIT 5000
 "#;
 
-const VIETNAM_PEOPLE: &str = r#"
+/// People: persons with citizenship or birth place in the country.
+const QUERY_PEOPLE: &str = r#"
 SELECT DISTINCT ?person ?personLabel ?personDescription ?birthDate ?deathDate ?occupation ?occupationLabel WHERE {
-  VALUES ?country { wd:Q881 }
+  VALUES ?country { wd:{COUNTRY_QID} }
   { ?person wdt:P27 ?country . }
   UNION
   { ?person wdt:P19 ?birthPlace . ?birthPlace wdt:P17 ?country . }
@@ -381,35 +40,39 @@ SELECT DISTINCT ?person ?personLabel ?personDescription ?birthDate ?deathDate ?o
   OPTIONAL { ?person wdt:P569 ?birthDate . }
   OPTIONAL { ?person wdt:P570 ?deathDate . }
   OPTIONAL { ?person wdt:P106 ?occupation . }
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,vi" . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "{LANG},en" . }
 }
 LIMIT 5000
 "#;
 
-const VIETNAM_HERITAGE: &str = r#"
-SELECT DISTINCT ?item ?itemLabel ?itemDescription ?type ?typeLabel ?coord WHERE {
-  VALUES ?country { wd:Q881 }
-  { ?item wdt:P31 wd:Q9259 . }
-    UNION
-  { ?item wdt:P31 wd:Q916333 . }
-    UNION
-  { ?item wdt:P31 wd:Q110602949 . }
-    UNION
-  { ?item wdt:P17 ?country . ?item wdt:P31 wd:Q570116 . }
-  OPTIONAL { ?item wdt:P625 ?coord . }
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en,vi" . }
+/// Events: historical events that happened in or involved the country.
+const QUERY_EVENTS: &str = r#"
+SELECT DISTINCT ?item ?itemLabel ?itemDescription ?type ?typeLabel ?pointInTime ?startTime ?endTime WHERE {
+  VALUES ?country { wd:{COUNTRY_QID} }
+  { ?item wdt:P276 ?location . ?location wdt:P17 ?country . }
+  UNION
+  { ?item wdt:P17 ?country . }
+  UNION
+  { ?item wdt:P710 ?participant . FILTER(?participant = wd:{COUNTRY_QID}) }
+  { ?item wdt:P585 ?pointInTime . }
+  UNION
+  { ?item wdt:P580 ?startTime . }
+  OPTIONAL { ?item wdt:P31 ?type . }
+  OPTIONAL { ?item wdt:P582 ?endTime . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "{LANG},en" . }
 }
-LIMIT 2000
+LIMIT 3000
 "#;
 
-fn entity_claims_query(qid: &str) -> String {
+/// Fetch all direct claims (edges) for a given entity QID.
+fn entity_claims_query(qid: &str, lang: &str) -> String {
     format!(
         r#"
         SELECT ?property ?propertyLabel ?value ?valueLabel WHERE {{
           wd:{qid} ?prop ?valueNode .
           ?property wikibase:directClaim ?prop .
-          OPTIONAL {{ ?valueNode rdfs:label ?valueLabel . FILTER(LANG(?valueLabel) = "en") }}
-          OPTIONAL {{ ?property rdfs:label ?propertyLabel . FILTER(LANG(?propertyLabel) = "en") }}
+          OPTIONAL {{ ?valueNode rdfs:label ?valueLabel . FILTER(LANG(?valueLabel) = "{lang}") }}
+          OPTIONAL {{ ?property rdfs:label ?propertyLabel . FILTER(LANG(?propertyLabel) = "{lang}") }}
           FILTER(STRSTARTS(STR(?property), "http://www.wikidata.org/entity/P"))
           FILTER(STRSTARTS(STR(?valueNode), "http://www.wikidata.org/entity/Q"))
         }}
@@ -417,6 +80,31 @@ fn entity_claims_query(qid: &str) -> String {
         "#
     )
 }
+
+/// Dataset definitions for the 3 generic crawl categories.
+struct DatasetDef {
+    name: &'static str,
+    query_template: &'static str,
+    node_type: NodeType,
+}
+
+const DATASETS: &[DatasetDef] = &[
+    DatasetDef {
+        name: "places",
+        query_template: QUERY_PLACES,
+        node_type: NodeType::Place,
+    },
+    DatasetDef {
+        name: "people",
+        query_template: QUERY_PEOPLE,
+        node_type: NodeType::Person,
+    },
+    DatasetDef {
+        name: "events",
+        query_template: QUERY_EVENTS,
+        node_type: NodeType::Event,
+    },
+];
 
 // ── Source Implementation ───────────────────────────────────────
 
@@ -429,7 +117,7 @@ impl DataSource for WikiDataSource {
             name: "wikidata".into(),
             description: "WikiData — open knowledge graph with structured data about the world"
                 .into(),
-            version: "1.0.0".into(),
+            version: "1.1.0".into(),
             endpoint: WDQS_URL.into(),
             entity_types: vec![
                 "place".into(),
@@ -440,8 +128,6 @@ impl DataSource for WikiDataSource {
                 "artifact".into(),
             ],
             properties: vec![
-                "P150 (contains admin division)".into(),
-                "P131 (located in)".into(),
                 "P17 (country)".into(),
                 "P31 (instance of)".into(),
                 "P580 (start time)".into(),
@@ -449,6 +135,8 @@ impl DataSource for WikiDataSource {
                 "P569 (date of birth)".into(),
                 "P106 (occupation)".into(),
                 "P625 (coordinate location)".into(),
+                "P27 (country of citizenship)".into(),
+                "P276 (location)".into(),
             ],
             metadata_fields: HashMap::from([
                 ("coordinates".into(), "Geo: latitude/longitude".into()),
@@ -464,108 +152,153 @@ impl DataSource for WikiDataSource {
     }
 
     async fn crawl(&self, ctx: &CrawlContext) -> Result<CrawlResult> {
+        let country_qid = ctx.country_qid.as_deref().unwrap_or("Q881"); // fallback: Vietnam
+        let lang = ctx.language.as_deref().unwrap_or("en");
+
+        info!(
+            "[wikidata] Crawling for country QID: {}, language: {}",
+            country_qid, lang
+        );
+
         let mut all_nodes: Vec<HyperNode> = Vec::new();
         let mut all_edges: Vec<HyperEdge> = Vec::new();
         let mut seen_ids = std::collections::HashSet::new();
-
-        // Determine which dataset(s) to crawl
-        let datasets: Vec<(&str, String, Option<String>)> = if let Some(ref pname) = ctx.partition {
-            // Single partition mode
-            let part = find_partition(pname).ok_or_else(|| {
-                anyhow::anyhow!(
-                    "Unknown partition: {}. Use --list-partitions to see all.",
-                    pname
-                )
-            })?;
-            info!("[wikidata] Partition: {} — {}", part.name, part.description);
-            match self.build_partition_query(part) {
-                Some((name, query)) => vec![(name, query, None)],
-                None => return Err(anyhow::anyhow!("No query for partition: {}", pname)),
-            }
-        } else {
-            // Full crawl: run all 4 datasets
-            vec![
-                ("admin_divisions", "full", None::<String>),
-                ("history_events", "full", None::<String>),
-                ("people", "full", None::<String>),
-                ("heritage", "full", None::<String>),
-            ]
-            .into_iter()
-            .map(|(n, _, _)| {
-                let q = match n {
-                    "admin_divisions" => VIETNAM_ADMIN_DIVISIONS.to_string(),
-                    "history_events" => VIETNAM_HISTORY_EVENTS.to_string(),
-                    "people" => VIETNAM_PEOPLE.to_string(),
-                    "heritage" => VIETNAM_HERITAGE.to_string(),
-                    _ => unreachable!(),
-                };
-                let final_q = if ctx.limit > 0 {
-                    apply_limit(&q, ctx.limit)
-                } else {
-                    q
-                };
-                (n, final_q, None)
-            })
-            .collect::<Vec<_>>()
-        };
 
         let pb = ctx
             .progress
             .then(|| ProgressBar::new_spinner().with_message("[wikidata] crawling..."));
 
-        for (name, query_str, _) in &datasets {
-            let q = query_str.clone();
+        // If a custom query is provided (from partition config), run it directly
+        if let Some(ref custom_query) = ctx.custom_query {
+            info!("  [wikidata] Running custom partition query");
+            let final_query = if ctx.limit > 0 {
+                apply_limit(custom_query, ctx.limit)
+            } else {
+                custom_query.clone()
+            };
 
-            match self.exec_sparql(&ctx.client, &q).await {
+            match self.exec_sparql(&ctx.client, &final_query).await {
                 Ok(json) => {
                     let bindings = parse_bindings(&json);
+                    let custom_type = ctx.custom_node_type.as_deref().unwrap_or("Other");
+                    let node_type = node_type_from_string(custom_type);
+
                     let nodes: Vec<HyperNode> = bindings
                         .iter()
-                        .filter_map(|row| binding_to_node(row, name))
+                        .filter_map(|row| binding_to_node(row, "custom", node_type.clone()))
                         .collect();
+
                     for node in nodes {
                         if seen_ids.insert(node.id.clone()) {
                             all_nodes.push(node);
                         }
                     }
-                    let count = if ctx.limit > 0 {
-                        ctx.limit.min(bindings.len())
-                    } else {
-                        bindings.len()
-                    };
-                    info!("  [wikidata] {} → {} entities", name, count);
+                    info!("  [wikidata] custom query → {} entities", bindings.len());
                 }
-                Err(e) => warn!("  [wikidata] {} crawl failed: {}", name, e),
+                Err(e) => warn!("  [wikidata] custom query failed: {}", e),
+            }
+
+            if let Some(pb) = pb {
+                pb.finish_with_message(format!(
+                    "[wikidata] done: {} entities, {} edges",
+                    all_nodes.len(),
+                    all_edges.len()
+                ));
+            }
+
+            let mut metadata = HashMap::new();
+            metadata.insert("country_qid".into(), country_qid.to_string());
+            metadata.insert("entity_count".into(), all_nodes.len().to_string());
+            metadata.insert("edge_count".into(), all_edges.len().to_string());
+
+            return Ok(CrawlResult {
+                source: "wikidata".into(),
+                nodes: all_nodes,
+                edges: all_edges,
+                metadata,
+            });
+        }
+
+        for dataset in DATASETS {
+            let query = dataset
+                .query_template
+                .replace("{COUNTRY_QID}", country_qid)
+                .replace("{LANG}", lang);
+
+            let final_query = if ctx.limit > 0 {
+                apply_limit(&query, ctx.limit)
+            } else {
+                query
+            };
+
+            match self.exec_sparql(&ctx.client, &final_query).await {
+                Ok(json) => {
+                    let bindings = parse_bindings(&json);
+                    let nodes: Vec<HyperNode> = bindings
+                        .iter()
+                        .filter_map(|row| {
+                            binding_to_node(row, dataset.name, dataset.node_type.clone())
+                        })
+                        .collect();
+
+                    let new_count = nodes.len();
+                    for node in nodes {
+                        if seen_ids.insert(node.id.clone()) {
+                            all_nodes.push(node);
+                        }
+                    }
+                    info!(
+                        "  [wikidata] {} → {} entities ({} new)",
+                        dataset.name,
+                        bindings.len(),
+                        new_count
+                    );
+                }
+                Err(e) => warn!("  [wikidata] {} crawl failed: {}", dataset.name, e),
             }
 
             if let Some(ref pb) = pb {
-                pb.set_message(format!("[wikidata] processed {name}"));
+                pb.set_message(format!("[wikidata] processed {}", dataset.name));
             }
         }
 
-        // Fetch edges for central entities
-        let central = vec!["Q881", "Q1858", "Q1854"];
-        for qid in &central {
-            if let Ok(edges) = self.fetch_edges_for(&ctx.client, qid).await {
+        // Fetch edges for the country entity itself
+        if let Ok(edges) = self.fetch_edges_for(&ctx.client, country_qid, lang).await {
+            info!("  [wikidata] {} → {} edges", country_qid, edges.len());
+            all_edges.extend(edges);
+        }
+
+        // Also fetch edges for some of the most central nodes (top N by discovery order)
+        let central_qids: Vec<&str> = all_nodes.iter().take(10).map(|n| n.id.as_str()).collect();
+        for qid in &central_qids {
+            if let Ok(edges) = self.fetch_edges_for(&ctx.client, qid, lang).await {
                 info!("  [wikidata] {} → {} edges", qid, edges.len());
                 all_edges.extend(edges);
             }
         }
 
-        // Fetch multilingual labels
-        let qids: Vec<String> = all_nodes.iter().map(|n| n.id.clone()).collect();
-        match self.fetch_labels_batch(&ctx.client, &qids).await {
-            Ok(labels) => {
-                for node in &mut all_nodes {
-                    if let Some((en, vi)) = labels.get(&node.id) {
-                        if !en.is_empty() {
-                            node.label = en.clone();
+        // Fetch multilingual labels if native language is configured
+        if let Some(ref lang) = ctx.language {
+            if lang != "en" {
+                let qids: Vec<String> = all_nodes.iter().map(|n| n.id.clone()).collect();
+                match self.fetch_labels_batch(&ctx.client, &qids, lang).await {
+                    Ok(labels) => {
+                        for node in &mut all_nodes {
+                            if let Some(native_label) = labels.get(&node.id) {
+                                node.label_local = Some(native_label.clone());
+                            }
                         }
-                        node.label_vi = vi.clone();
                     }
+                    Err(e) => warn!("  [wikidata] native label fetch failed: {}", e),
                 }
             }
-            Err(e) => warn!("  [wikidata] label fetch failed: {}", e),
+        }
+
+        if let Some(ref lang) = ctx.language {
+            info!("  [wikidata] Fetching Wikipedia summaries (LOD word threshold = 150)...");
+            if let Err(e) = self.fetch_wikipedia_summaries_batch(&ctx.client, &mut all_nodes, lang, 150).await {
+                warn!("  [wikidata] Wikipedia summaries LOD fetch failed: {}", e);
+            }
         }
 
         if let Some(pb) = pb {
@@ -577,6 +310,7 @@ impl DataSource for WikiDataSource {
         }
 
         let mut metadata = HashMap::new();
+        metadata.insert("country_qid".into(), country_qid.to_string());
         metadata.insert("entity_count".into(), all_nodes.len().to_string());
         metadata.insert("edge_count".into(), all_edges.len().to_string());
 
@@ -590,71 +324,63 @@ impl DataSource for WikiDataSource {
 }
 
 impl WikiDataSource {
-    /// Build a SPARQL query for a specific partition definition.
-    /// Returns (query_name, query_string).
-    fn build_partition_query(&self, part: &PartitionDef) -> Option<(&str, String)> {
-        let base = match part.category {
-            "admin" => VIETNAM_ADMIN_DIVISIONS,
-            "history" => VIETNAM_HISTORY_EVENTS,
-            "people" => VIETNAM_PEOPLE,
-            "heritage" => VIETNAM_HERITAGE,
-            _ => return None,
-        };
-
-        let filter = part.filter.trim();
-        let query = if filter.is_empty() {
-            base.to_string()
-        } else {
-            // Insert filter before the SERVICE wikibase:label line
-            if let Some(pos) = base.rfind("SERVICE wikibase:label") {
-                // Build the FILTER or triple pattern
-                let filter_clause = if filter.starts_with("FILTER") || filter.starts_with("filter")
-                {
-                    format!("  {}\n", filter)
-                } else if filter.contains(' ') && !filter.contains("FILTER") {
-                    // It's a raw triple pattern
-                    format!("  {}.\n", filter)
-                } else {
-                    format!("  FILTER({}).\n", filter)
-                };
-
-                let before = &base[..pos];
-                let after = &base[pos..];
-                format!("{}{}{}", before, filter_clause, after)
-            } else {
-                base.to_string()
-            }
-        };
-
-        Some((part.category, query))
-    }
-
     async fn exec_sparql(&self, client: &reqwest::Client, query: &str) -> Result<Value> {
-        let resp = client
-            .post(WDQS_URL)
-            .query(&[("format", "json")])
-            // Must send query as URL-encoded form or with proper content-type
-            .header("Accept", "application/sparql-results+json")
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .body(format!("query={}", url_encode(query)))
-            .send()
-            .await
-            .context("SPARQL request failed")?;
+        let mut retries = 0;
+        let max_retries = 5;
+        let mut backoff = Duration::from_secs(2);
 
-        if !resp.status().is_success() {
-            let status = resp.status();
-            let body = resp.text().await.unwrap_or_default();
-            anyhow::bail!("SPARQL {}: {}", status, body);
+        loop {
+            let resp_result = client
+                .post(WDQS_URL)
+                .query(&[("format", "json")])
+                .header("Accept", "application/sparql-results+json")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("User-Agent", "MinidiSpider/1.1 (https://github.com/minidivn/minidi-spider; contact@minidi.vn)")
+                .body(format!("query={}", url_encode(query)))
+                .send()
+                .await;
+
+            match resp_result {
+                Ok(resp) => {
+                    let status = resp.status();
+                    if status.is_success() {
+                        return Ok(resp.json().await.context("Failed to parse SPARQL JSON")?);
+                    }
+
+                    if (status.is_server_error() || status.as_u16() == 429) && retries < max_retries {
+                        retries += 1;
+                        warn!(
+                            "  [wikidata] SPARQL query failed with status {} ({}/{}). Retrying in {}s...",
+                            status, retries, max_retries, backoff.as_secs()
+                        );
+                        tokio::time::sleep(backoff).await;
+                        backoff *= 2;
+                        continue;
+                    }
+
+                    let body = resp.text().await.unwrap_or_default();
+                    anyhow::bail!("SPARQL {}: {}", status, body);
+                }
+                Err(e) if retries < max_retries => {
+                    retries += 1;
+                    warn!(
+                        "  [wikidata] Network error sending SPARQL query ({}/{}): {}. Retrying in {}s...",
+                        retries, max_retries, e, backoff.as_secs()
+                    );
+                    tokio::time::sleep(backoff).await;
+                    backoff *= 2;
+                }
+                Err(e) => return Err(e).context("SPARQL request failed after retries"),
+            }
         }
-
-        Ok(resp.json().await.context("Failed to parse SPARQL JSON")?)
     }
 
     async fn fetch_labels_batch(
         &self,
         client: &reqwest::Client,
         qids: &[String],
-    ) -> Result<HashMap<String, (String, Option<String>)>> {
+        lang: &str,
+    ) -> Result<HashMap<String, String>> {
         let mut result = HashMap::new();
         for chunk in qids.chunks(50) {
             let ids = chunk.join("|");
@@ -662,7 +388,7 @@ impl WikiDataSource {
                 ("action", "wbgetentities"),
                 ("ids", &ids),
                 ("props", "labels"),
-                ("languages", "en|vi"),
+                ("languages", &format!("en|{}", lang)),
                 ("format", "json"),
             ];
 
@@ -670,14 +396,9 @@ impl WikiDataSource {
                 if let Ok(json) = resp.json::<Value>().await {
                     if let Some(entities) = json["entities"].as_object() {
                         for (qid, entity) in entities {
-                            let en = entity["labels"]["en"]["value"]
-                                .as_str()
-                                .unwrap_or("")
-                                .to_string();
-                            let vi = entity["labels"]["vi"]["value"]
-                                .as_str()
-                                .map(|s| s.to_string());
-                            result.insert(qid.clone(), (en, vi));
+                            if let Some(label) = entity["labels"][lang]["value"].as_str() {
+                                result.insert(qid.clone(), label.to_string());
+                            }
                         }
                     }
                 }
@@ -687,8 +408,13 @@ impl WikiDataSource {
         Ok(result)
     }
 
-    async fn fetch_edges_for(&self, client: &reqwest::Client, qid: &str) -> Result<Vec<HyperEdge>> {
-        let query = entity_claims_query(qid);
+    async fn fetch_edges_for(
+        &self,
+        client: &reqwest::Client,
+        qid: &str,
+        lang: &str,
+    ) -> Result<Vec<HyperEdge>> {
+        let query = entity_claims_query(qid, lang);
         let json = self.exec_sparql(client, &query).await?;
         let bindings = parse_bindings(&json);
 
@@ -715,6 +441,73 @@ impl WikiDataSource {
             }
         }
         Ok(edges)
+    }
+
+    async fn fetch_wikipedia_summaries_batch(
+        &self,
+        client: &reqwest::Client,
+        nodes: &mut [HyperNode],
+        lang: &str,
+        word_threshold: usize,
+    ) -> Result<()> {
+        let limit_nodes = std::cmp::min(nodes.len(), 30);
+        for i in 0..limit_nodes {
+            let qid = &nodes[i].id;
+            let params = [
+                ("action", "wbgetentities"),
+                ("ids", qid),
+                ("props", "sitelinks"),
+                ("format", "json"),
+            ];
+
+            let mut wiki_title = None;
+            let mut wiki_lang = "en".to_string();
+
+            if let Ok(resp) = client.get(WIKI_API).query(&params).send().await {
+                if let Ok(json) = resp.json::<Value>().await {
+                    if let Some(entity) = json["entities"][qid].as_object() {
+                        let local_wiki = format!("{}wiki", lang);
+                        if let Some(title) = entity["sitelinks"][&local_wiki]["title"].as_str() {
+                            wiki_title = Some(title.to_string());
+                            wiki_lang = lang.to_string();
+                        } else if let Some(title) = entity["sitelinks"]["enwiki"]["title"].as_str() {
+                            wiki_title = Some(title.to_string());
+                            wiki_lang = "en".to_string();
+                        }
+                    }
+                }
+            }
+
+            if let Some(title) = wiki_title {
+                let wp_api = format!("https://{}.wikipedia.org/w/api.php", wiki_lang);
+                let wp_params = [
+                    ("action", "query"),
+                    ("prop", "extracts"),
+                    ("exintro", "1"),
+                    ("explaintext", "1"),
+                    ("titles", &title),
+                    ("format", "json"),
+                    ("redirects", "1"),
+                ];
+
+                if let Ok(resp) = client.get(&wp_api).query(&wp_params).send().await {
+                    if let Ok(json) = resp.json::<Value>().await {
+                        if let Some(pages) = json["query"]["pages"].as_object() {
+                            for (_, page) in pages {
+                                if let Some(extract) = page["extract"].as_str() {
+                                    if !extract.is_empty() {
+                                        let truncated = truncate_to_word_count(extract, word_threshold);
+                                        nodes[i].metadata.insert("summary".to_string(), truncated);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        Ok(())
     }
 }
 
@@ -749,7 +542,6 @@ fn extract_qid(uri: &str) -> Option<String> {
 }
 
 fn url_encode(s: &str) -> String {
-    // Manual URL encoding for SPARQL queries (space → +, special chars → %XX)
     let mut out = String::with_capacity(s.len() * 2);
     for byte in s.bytes() {
         match byte {
@@ -766,10 +558,8 @@ fn url_encode(s: &str) -> String {
 }
 
 fn apply_limit(query: &str, limit: usize) -> String {
-    // Replace LIMIT clause if present
     let lowered = query.to_lowercase();
     if let Some(pos) = lowered.rfind("limit") {
-        // Find end of the numeric limit
         let rest = &query[pos..];
         let after_limit = rest.trim_start_matches(|c: char| c.is_alphabetic() || c.is_whitespace());
         let num_end = after_limit
@@ -787,7 +577,24 @@ fn apply_limit(query: &str, limit: usize) -> String {
     }
 }
 
-fn binding_to_node(row: &HashMap<String, String>, dataset: &str) -> Option<HyperNode> {
+/// Parse node type from a config string.
+fn node_type_from_string(s: &str) -> NodeType {
+    match s.to_lowercase().as_str() {
+        "place" | "location" | "geography" => NodeType::Place,
+        "person" | "people" | "human" => NodeType::Person,
+        "event" | "history" => NodeType::Event,
+        "concept" | "idea" => NodeType::Concept,
+        "organization" | "org" => NodeType::Organization,
+        "artifact" | "object" | "work" => NodeType::Artifact,
+        _ => NodeType::Other,
+    }
+}
+
+fn binding_to_node(
+    row: &HashMap<String, String>,
+    dataset: &str,
+    default_type: NodeType,
+) -> Option<HyperNode> {
     let id = row
         .get("item")
         .or(row.get("person"))
@@ -810,15 +617,10 @@ fn binding_to_node(row: &HashMap<String, String>, dataset: &str) -> Option<Hyper
 
     let node_type = if dataset == "people" || row.contains_key("birthDate") {
         NodeType::Person
-    } else if dataset == "history_events" || row.contains_key("pointInTime") {
+    } else if dataset == "events" || row.contains_key("pointInTime") {
         NodeType::Event
-    } else if dataset == "heritage" || row.contains_key("coord") {
-        match row.get("typeLabel").map(|s| s.as_str()) {
-            Some("world heritage site") | Some("national park") => NodeType::Place,
-            _ => NodeType::Place,
-        }
     } else {
-        NodeType::Place
+        default_type
     };
 
     let mut metadata = HashMap::new();
@@ -839,13 +641,27 @@ fn binding_to_node(row: &HashMap<String, String>, dataset: &str) -> Option<Hyper
     Some(HyperNode {
         id: id.clone(),
         label,
-        label_vi: None,
+        label_local: None,
         description,
-        description_vi: None,
+        description_local: None,
         aliases: Vec::new(),
-        aliases_vi: Vec::new(),
+        aliases_local: Vec::new(),
         node_type,
         wikidata_url: format!("https://www.wikidata.org/wiki/{id}"),
         metadata,
     })
+}
+
+fn truncate_to_word_count(text: &str, limit: usize) -> String {
+    let words: Vec<&str> = text.split_whitespace().collect();
+    if words.len() <= limit {
+        return text.to_string();
+    }
+    let truncated_text = words[..limit].join(" ");
+    if let Some(last_period) = truncated_text.rfind('.') {
+        if last_period > truncated_text.len() * 3 / 4 {
+            return truncated_text[..=last_period].to_string();
+        }
+    }
+    format!("{}...", truncated_text)
 }
