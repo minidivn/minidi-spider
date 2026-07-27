@@ -1,0 +1,12 @@
+# Vietnam-specific: UNESCO heritage sites and national parks.
+SELECT DISTINCT ?item ?itemLabel ?itemDescription ?type ?typeLabel ?coord WHERE {
+  VALUES ?country { wd:Q881 }
+  { ?item wdt:P31 wd:Q9259 . }        # UNESCO World Heritage Site
+    UNION
+  { ?item wdt:P31 wd:Q916333 . }       # National park
+    UNION
+  { ?item wdt:P17 ?country . ?item wdt:P31 wd:Q570116 . }  # Intangible heritage
+  OPTIONAL { ?item wdt:P625 ?coord . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "vi,en" . }
+}
+LIMIT 1000

@@ -24,9 +24,10 @@ impl FullTextIndex {
 
         let id_field = schema_builder.add_text_field("id", STRING | STORED);
         let label_field = schema_builder.add_text_field("label", TEXT | STORED);
-        let label_vi_field = schema_builder.add_text_field("label_vi", TEXT | STORED);
+        let label_local_field = schema_builder.add_text_field("label_local", TEXT | STORED);
         let description_field = schema_builder.add_text_field("description", TEXT | STORED);
         let aliases_field = schema_builder.add_text_field("aliases", TEXT);
+        let aliases_local_field = schema_builder.add_text_field("aliases_local", TEXT);
         let node_type_field = schema_builder.add_text_field("node_type", STRING | STORED);
 
         let schema = schema_builder.build();
@@ -43,14 +44,15 @@ impl FullTextIndex {
         info!("Indexing {} nodes into Tantivy...", graph.node_count());
         for node in graph.nodes.values() {
             // Combine aliases into one field
-            let all_aliases = [node.aliases.as_slice(), node.aliases_vi.as_slice()].concat();
+            let all_aliases = [node.aliases.as_slice(), node.aliases_local.as_slice()].concat();
 
             writer.add_document(doc!(
                 id_field => node.id.clone(),
                 label_field => node.label.clone(),
-                label_vi_field => node.label_vi.as_deref().unwrap_or(""),
+                label_local_field => node.label_local.as_deref().unwrap_or(""),
                 description_field => node.description.clone(),
                 aliases_field => all_aliases.join("; "),
+                aliases_local_field => node.aliases_local.join("; "),
                 node_type_field => format!("{:?}", node.node_type),
             ))?;
         }
@@ -92,9 +94,10 @@ impl FullTextIndex {
             &self.index,
             vec![
                 schema.get_field("label")?,
-                schema.get_field("label_vi")?,
+                schema.get_field("label_local")?,
                 schema.get_field("description")?,
                 schema.get_field("aliases")?,
+                schema.get_field("aliases_local")?,
             ],
         );
 

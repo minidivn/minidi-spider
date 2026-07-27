@@ -1,0 +1,14 @@
+# Generic: Populated places (cities, towns) filtered by population or region.
+# {COUNTRY_QID} {LANG} {FILTER} {LIMIT}
+SELECT DISTINCT ?item ?itemLabel ?itemDescription ?coord ?population ?elevation WHERE {
+  VALUES ?country { wd:{COUNTRY_QID} }
+  ?item wdt:P17 ?country .
+  ?item wdt:P31 wd:Q515 .             # instance of = city
+  OPTIONAL { ?item wdt:P625 ?coord . }
+  OPTIONAL { ?item wdt:P1082 ?population . }
+  OPTIONAL { ?item wdt:P2044 ?elevation . }
+  {FILTER}
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "{LANG},en" . }
+}
+ORDER BY DESC(?population)
+LIMIT {LIMIT}

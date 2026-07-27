@@ -1,0 +1,15 @@
+{
+  "created_at": "2026-07-25T03:36:07.174827700+00:00",
+  "language_code": "fr",
+  "node_types": {
+    "event": 21,
+    "organization": 15,
+    "other": 500,
+    "person": 32,
+    "place": 33
+  },
+  "run_at": "2026-07-25T03:36:07.174796300+00:00",
+  "topic": "fr",
+  "total_edges": 0,
+  "total_nodes": 601
+}

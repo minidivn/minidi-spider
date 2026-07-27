@@ -1,0 +1,16 @@
+# Generic: People associated with a country (citizenship or birthplace).
+# {COUNTRY_QID} = WikiData QID for the country
+# {LANG} = label language (e.g. "en", "vi", "zh")
+# {LIMIT} = maximum number of results
+SELECT DISTINCT ?person ?personLabel ?personDescription ?birthDate ?deathDate ?occupation ?occupationLabel WHERE {
+  VALUES ?country { wd:{COUNTRY_QID} }
+  { ?person wdt:P27 ?country . }
+  UNION
+  { ?person wdt:P19 ?birthPlace . ?birthPlace wdt:P17 ?country . }
+  ?person wdt:P31 wd:Q5 .
+  OPTIONAL { ?person wdt:P569 ?birthDate . }
+  OPTIONAL { ?person wdt:P570 ?deathDate . }
+  OPTIONAL { ?person wdt:P106 ?occupation . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "{LANG},en" . }
+}
+LIMIT {LIMIT}

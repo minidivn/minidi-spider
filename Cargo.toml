@@ -37,6 +37,7 @@ indicatif = "0.17"          # progress bars
 
 # Vietnam-specific: date/time parsing
 chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.24.0", features = ["v5", "v4", "serde"] }
 
 [profile.release]
 opt-level = 3

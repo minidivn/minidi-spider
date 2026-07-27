@@ -1,0 +1,19 @@
+# Generic: Historical events that happened in or involved a country.
+# {COUNTRY_QID} = WikiData QID for the country
+# {LANG} = label language (e.g. "en", "vi", "zh")
+# {LIMIT} = maximum number of results
+SELECT DISTINCT ?item ?itemLabel ?itemDescription ?type ?typeLabel ?pointInTime ?startTime ?endTime WHERE {
+  VALUES ?country { wd:{COUNTRY_QID} }
+  { ?item wdt:P276 ?location . ?location wdt:P17 ?country . }
+  UNION
+  { ?item wdt:P17 ?country . }
+  UNION
+  { ?item wdt:P710 ?participant . FILTER(?participant = wd:{COUNTRY_QID}) }
+  { ?item wdt:P585 ?pointInTime . }
+  UNION
+  { ?item wdt:P580 ?startTime . }
+  OPTIONAL { ?item wdt:P31 ?type . }
+  OPTIONAL { ?item wdt:P582 ?endTime . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "{LANG},en" . }
+}
+LIMIT {LIMIT}

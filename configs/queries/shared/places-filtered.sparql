@@ -1,0 +1,11 @@
+# Generic: Places / geography — with injectable FILTER for sub-partitions.
+# {COUNTRY_QID} {LANG} {FILTER} {LIMIT}
+SELECT DISTINCT ?item ?itemLabel ?itemDescription ?type ?typeLabel ?coord WHERE {
+  VALUES ?country { wd:{COUNTRY_QID} }
+  { ?item wdt:P17 ?country . }
+  ?item wdt:P31 ?type .
+  OPTIONAL { ?item wdt:P625 ?coord . }
+  {FILTER}
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "{LANG},en" . }
+}
+LIMIT {LIMIT}

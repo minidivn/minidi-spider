@@ -120,11 +120,39 @@ enum Command {
     Init,
 }
 
-fn build_registry() -> SourceRegistry {
+fn build_registry(data_parent_dir: std::path::PathBuf) -> SourceRegistry {
     let mut reg = SourceRegistry::new();
     reg.register(Box::new(sources::wikidata::WikiDataSource));
     reg.register(Box::new(sources::wikipedia::WikipediaSource));
     reg.register(Box::new(sources::openstreetmap::OpenStreetMapSource));
+    reg.register(Box::new(sources::dictionary::DictionaryDataSource {
+        data_parent_dir: data_parent_dir.clone(),
+    }));
+
+    // Dynamically load external script plugins if configs/script_sources.json exists
+    let script_config_path = std::path::Path::new("configs/script_sources.json");
+    if script_config_path.exists() {
+        #[derive(serde::Deserialize)]
+        struct ScriptSourceDef {
+            name: String,
+            description: String,
+            command: String,
+            entity_types: Vec<String>,
+        }
+        if let Ok(content) = std::fs::read_to_string(script_config_path) {
+            if let Ok(defs) = serde_json::from_str::<Vec<ScriptSourceDef>>(&content) {
+                for def in defs {
+                    reg.register(Box::new(sources::script::ScriptDataSource {
+                        name: def.name,
+                        description: def.description,
+                        command_str: def.command,
+                        entity_types: def.entity_types,
+                    }));
+                }
+            }
+        }
+    }
+
     reg
 }
 
@@ -220,7 +248,13 @@ async fn main() -> Result<()> {
 }
 
 fn cmd_sources() -> Result<()> {
-    let registry = build_registry();
+    let config_path = std::path::PathBuf::from("configs/countries.json");
+    let output_parent = if let Ok(cfg) = config::CountriesConfig::from_file(&config_path) {
+        std::path::PathBuf::from(cfg.output_parent)
+    } else {
+        std::path::PathBuf::from("../Minidi/Data")
+    };
+    let registry = build_registry(output_parent);
     println!("\n📦 Available Data Sources\n");
     for source in registry.all() {
         let s = source.schema();
@@ -283,6 +317,25 @@ async fn cmd_crawl(
     progress: bool,
 ) -> Result<()> {
     let (countries_config, country) = resolve_country_config(&config_path, &country_code)?;
+    let db_path = if db_path == PathBuf::from("data/spider.db") {
+        PathBuf::from(format!("data/spider_{}.db", country.code))
+    } else {
+        db_path
+    };
+
+    let start_time = chrono::Local::now().format("%Y%m%d_%H%M%S").to_string();
+    let topic = country.code.clone();
+    let job_dir = std::path::PathBuf::from("jobs").join(format!("{}_{}", start_time, topic));
+    std::fs::create_dir_all(&job_dir)?;
+    let run_info = serde_json::json!({
+        "topic": topic,
+        "start_time": chrono::Utc::now().to_rfc3339(),
+        "limit": limit,
+        "sources": sources,
+        "db_path": db_path.display().to_string(),
+    });
+    std::fs::write(job_dir.join("run_info.json"), serde_json::to_string_pretty(&run_info)?)?;
+
     info!(
         "Crawling for country: {} ({}) QID={} language={}",
         country.name, country.code, country.qid, country.language
@@ -290,7 +343,8 @@ async fn cmd_crawl(
     info!("Store at: {}", db_path.display());
 
     let store = graph::store::HyperGraphStore::open(&db_path)?;
-    let registry = build_registry();
+    let output_parent = std::path::PathBuf::from(countries_config.output_parent.clone());
+    let registry = build_registry(output_parent);
 
     // Use partitions from config if available
     let partitions = countries_config.get_partitions(&country.code);
@@ -408,6 +462,13 @@ async fn cmd_crawl(
 
     store.flush()?;
     info!("Crawl complete for {}!", country.name);
+
+    let end_info = serde_json::json!({
+        "status": "success",
+        "end_time": chrono::Utc::now().to_rfc3339(),
+    });
+    std::fs::write(job_dir.join("status.json"), serde_json::to_string_pretty(&end_info)?)?;
+
     Ok(())
 }
 
@@ -421,14 +482,23 @@ async fn cmd_export(
     country_name: Option<String>,
 ) -> Result<()> {
     let (countries_config, country) = resolve_country_config(&config_path, &country_code)?;
+    let db_path = if db_path == PathBuf::from("data/spider.db") {
+        PathBuf::from(format!("data/spider_{}.db", country.code))
+    } else {
+        db_path
+    };
 
     let output_dir = match output {
         Some(p) => p,
         None => countries_config.output_path(&country.code)?,
     };
 
-    // Data files go into _data/ subfolder
-    let data_dir = output_dir.join("_data");
+    // Data files go into _data/ subfolder (under docs/ if it exists, for Jekyll/GitHub Pages support)
+    let data_dir = if output_dir.join("docs").is_dir() {
+        output_dir.join("docs").join("_data")
+    } else {
+        output_dir.join("_data")
+    };
 
     let display_name = country_name.unwrap_or_else(|| country.name.clone());
 
@@ -450,11 +520,12 @@ async fn cmd_export(
     } else {
         index::export::export_graph_to_json(&graph, &data_dir, &country)?;
         index::export::export_graph_to_compressed_json(&graph, &data_dir)?;
-        index::export::export_all_partitions(&graph, &data_dir)?;
+        index::export::export_all_partitions(&graph, &data_dir, &country)?;
     }
 
     // Export sources list
-    let registry = build_registry();
+    let output_parent = std::path::PathBuf::from(countries_config.output_parent.clone());
+    let registry = build_registry(output_parent);
     let schemas_json = serde_json::to_string_pretty(&registry.schemas())?;
     std::fs::write(data_dir.join("sources.json"), &schemas_json)?;
 
@@ -474,6 +545,28 @@ async fn cmd_export(
 
         info!("Embeddings exported");
     }
+
+    // Compile and write stats report to stats/<topic>/report.json
+    let stats_dir = std::path::PathBuf::from("stats").join(&country.code);
+    std::fs::create_dir_all(&stats_dir)?;
+
+    let mut node_types = std::collections::HashMap::new();
+    for node in graph.nodes.values() {
+        let t = format!("{:?}", node.node_type).to_lowercase();
+        *node_types.entry(t).or_insert(0) += 1;
+    }
+
+    let report = serde_json::json!({
+        "topic": country.code.clone(),
+        "run_at": chrono::Utc::now().to_rfc3339(),
+        "language_code": country.language.clone(),
+        "total_nodes": graph.node_count(),
+        "total_edges": graph.edge_count(),
+        "node_types": node_types,
+        "created_at": chrono::Utc::now().to_rfc3339(),
+    });
+    std::fs::write(stats_dir.join("report.json"), serde_json::to_string_pretty(&report)?)?;
+    info!("Stats report written to: {}", stats_dir.join("report.json").display());
 
     info!(
         "Export complete for {}! Output: {}",

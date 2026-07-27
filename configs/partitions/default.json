@@ -3,7 +3,7 @@
     "name": "custom-seeds",
     "description": "Explicitly requested entities for highlights and deep-linking cross-compatibility",
     "category": "people",
-    "query_inline": "SELECT DISTINCT ?person ?personLabel ?personDescription ?birthDate ?deathDate ?occupationLabel WHERE { VALUES ?person { wd:Q90 wd:Q3602 wd:Q64 wd:Q190128 wd:Q243 wd:Q1191004 wd:Q4117 wd:Q82118 wd:Q10772277 wd:Q46679 wd:Q937 wd:Q7186 wd:Q935 wd:Q6694 wd:Q12091 wd:Q1035 wd:Q38125 wd:Q41697 wd:Q7259 wd:Q8963 wd:Q307 } OPTIONAL { ?person wdt:P569 ?birthDate . } OPTIONAL { ?person wdt:P570 ?deathDate . } OPTIONAL { ?person wdt:P106 ?occ . ?occ rdfs:label ?occupationLabel . FILTER(LANG(?occupationLabel) = \"en\") } SERVICE wikibase:label { bd:serviceParam wikibase:language \"{LANG},en\" . } } LIMIT 100",
+    "query_inline": "SELECT DISTINCT ?person ?personLabel ?personDescription ?birthDate ?deathDate ?occupationLabel WHERE { VALUES ?person { wd:Q90 wd:Q3602 wd:Q64 wd:Q190128 wd:Q243 wd:Q1191004 wd:Q4117 wd:Q82425 wd:Q10772277 wd:Q46679 wd:Q937 wd:Q7186 wd:Q935 wd:Q6694 wd:Q12091 wd:Q1035 wd:Q38125 wd:Q9021 wd:Q7259 wd:Q8963 wd:Q307 } OPTIONAL { ?person wdt:P569 ?birthDate . } OPTIONAL { ?person wdt:P570 ?deathDate . } OPTIONAL { ?person wdt:P106 ?occ . ?occ rdfs:label ?occupationLabel . FILTER(LANG(?occupationLabel) = \"en\") } SERVICE wikibase:label { bd:serviceParam wikibase:language \"{LANG},en\" . } } LIMIT 100",
     "node_type": "Person",
     "limit": 100
   },

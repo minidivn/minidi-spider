@@ -1,0 +1,13 @@
+# China-specific: Dynasties and major historical periods.
+SELECT DISTINCT ?item ?itemLabel ?itemDescription ?startTime ?endTime ?coord WHERE {
+  { ?item wdt:P31 wd:Q170135 . }     # instance of = dynasty
+    UNION
+  { ?item wdt:P31 wd:Q105696 . }     # instance of = historical period
+  ?item wdt:P17 wd:Q148 .            # country = China
+  OPTIONAL { ?item wdt:P580 ?startTime . }
+  OPTIONAL { ?item wdt:P582 ?endTime . }
+  OPTIONAL { ?item wdt:P625 ?coord . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "zh,en" . }
+}
+ORDER BY ?startTime
+LIMIT 200

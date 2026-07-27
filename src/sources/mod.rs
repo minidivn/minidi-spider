@@ -8,6 +8,8 @@ use crate::graph::{HyperEdge, HyperNode};
 pub mod openstreetmap;
 pub mod wikidata;
 pub mod wikipedia;
+pub mod dictionary;
+pub mod script;
 
 /// Schema descriptor for a data source.
 /// Tells the frontend what fields to expect and how to render them.
@@ -46,13 +48,27 @@ pub struct CrawlContext {
     pub limit: usize,
     pub progress: bool,
     pub user_agent: String,
-    /// Optional named partition to restrict crawling to (e.g. "adm-north-provinces").
-    /// None = crawl everything the source provides.
+    /// WikiData QID for the country to crawl (e.g. "Q881" for Vietnam).
+    pub country_qid: Option<String>,
+    /// Language code for native labels (e.g. "vi", "zh", "hi").
+    /// If None, only English labels are fetched.
+    pub language: Option<String>,
+    /// Optional named partition to restrict crawling to.
     pub partition: Option<String>,
+    /// Custom SPARQL query override (if set, runs this instead of default queries).
+    pub custom_query: Option<String>,
+    /// Node type to assign to entities from custom query.
+    pub custom_node_type: Option<String>,
 }
 
 impl CrawlContext {
-    pub fn new(limit: usize, progress: bool, partition: Option<String>) -> Result<Self> {
+    pub fn new(
+        limit: usize,
+        progress: bool,
+        country_qid: Option<String>,
+        language: Option<String>,
+        partition: Option<String>,
+    ) -> Result<Self> {
         let client = reqwest::Client::builder()
             .user_agent(format!(
                 "MinidiSpider/0.1 (+https://github.com/minidivn/minidi-spider)"
@@ -65,7 +81,11 @@ impl CrawlContext {
             client,
             limit,
             progress,
+            country_qid,
+            language,
             partition,
+            custom_query: None,
+            custom_node_type: None,
             user_agent: format!("MinidiSpider/0.1"),
         })
     }

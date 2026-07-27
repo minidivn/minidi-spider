@@ -1,0 +1,582 @@
+[
+  {
+    "name": "adm-country",
+    "description": "Vietnam as a single country entity",
+    "category": "admin",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?item = wd:Q881)",
+    "filters": {},
+    "node_type": "Place",
+    "limit": 1
+  },
+  {
+    "name": "adm-north-provinces",
+    "description": "Northern provinces (Red River Delta, Northeast, Northwest)",
+    "category": "admin",
+    "query_file": "shared/admin-divisions.sparql",
+    "filter": "",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 200
+  },
+  {
+    "name": "adm-central-provinces",
+    "description": "Central provinces (North Central, South Central Coast)",
+    "category": "admin",
+    "query_file": "shared/admin-divisions.sparql",
+    "filter": "",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 150
+  },
+  {
+    "name": "adm-south-provinces",
+    "description": "Southern provinces (Mekong Delta, Southeast)",
+    "category": "admin",
+    "query_file": "shared/admin-divisions.sparql",
+    "filter": "",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 150
+  },
+  {
+    "name": "adm-highlands",
+    "description": "Central Highlands provinces (Tay Nguyen)",
+    "category": "admin",
+    "query_file": "shared/admin-divisions.sparql",
+    "filter": "",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 50
+  },
+  {
+    "name": "adm-hanoi",
+    "description": "Hanoi capital city — districts, wards, administrative units",
+    "category": "admin",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P131 wd:Q1858 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 200
+  },
+  {
+    "name": "adm-hcmc",
+    "description": "Ho Chi Minh City — districts, wards, administrative units",
+    "category": "admin",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P131 wd:Q1854 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 200
+  },
+  {
+    "name": "adm-danang",
+    "description": "Da Nang city — districts, wards, administrative units",
+    "category": "admin",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P131 wd:Q18561 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 100
+  },
+  {
+    "name": "adm-haiphong",
+    "description": "Hai Phong city — districts, wards, administrative units",
+    "category": "admin",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P131 wd:Q18587 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 100
+  },
+  {
+    "name": "adm-cantho",
+    "description": "Can Tho city — districts, wards, administrative units",
+    "category": "admin",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P131 wd:Q18560 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 100
+  },
+  {
+    "name": "adm-provinces-remaining",
+    "description": "Remaining provinces not covered by other admin partitions",
+    "category": "admin",
+    "query_file": "shared/admin-divisions.sparql",
+    "filter": "",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 300
+  },
+  {
+    "name": "adm-districts-major",
+    "description": "Major urban districts and provincial capitals",
+    "category": "admin",
+    "query_file": "shared/cities.sparql",
+    "filter": "FILTER(?population > 100000)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 500
+  },
+  {
+    "name": "hist-paleolithic",
+    "description": "Prehistoric Vietnam before 1000 BCE — Paleolithic and Neolithic sites",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) < -1000)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 100
+  },
+  {
+    "name": "hist-hongbang",
+    "description": "Hong Bang dynasty — legendary Hung Kings period (2879–258 BCE)",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= -2879 && YEAR(?pointInTime) < -258)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 100
+  },
+  {
+    "name": "hist-chinese-dom",
+    "description": "Chinese domination period (111 BCE – 939 CE)",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= -111 && YEAR(?pointInTime) < 939)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 150
+  },
+  {
+    "name": "hist-ngo-dinh-le",
+    "description": "Ngo, Dinh, and Early Le dynasties (939–1009)",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 939 && YEAR(?pointInTime) < 1009)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 100
+  },
+  {
+    "name": "hist-ly",
+    "description": "Ly dynasty (1009–1225) — founding of Hanoi, Buddhist golden age",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 1009 && YEAR(?pointInTime) < 1225)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 150
+  },
+  {
+    "name": "hist-tran",
+    "description": "Tran dynasty (1225–1400) — Mongol invasions, Dai Viet expansion",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 1225 && YEAR(?pointInTime) < 1400)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 150
+  },
+  {
+    "name": "hist-le-so",
+    "description": "Later Le dynasty (1428–1789) — Le Loi independence, Le Thanh Tong reforms",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 1428 && YEAR(?pointInTime) < 1789)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 200
+  },
+  {
+    "name": "hist-tay-son",
+    "description": "Tay Son dynasty (1778–1802) — peasant uprising, Quang Trung emperor",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 1778 && YEAR(?pointInTime) < 1802)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 100
+  },
+  {
+    "name": "hist-nguyen",
+    "description": "Nguyen dynasty (1802–1945) — last imperial dynasty, Hue capital",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 1802 && YEAR(?pointInTime) < 1945)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 200
+  },
+  {
+    "name": "hist-colonial",
+    "description": "French colonial period (1858–1954) — conquest, Indochina, resistance",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 1858 && YEAR(?pointInTime) < 1954)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 300
+  },
+  {
+    "name": "hist-vn-war",
+    "description": "Vietnam War / American War (1955–1975)",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 1955 && YEAR(?pointInTime) < 1975)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 400
+  },
+  {
+    "name": "hist-modern",
+    "description": "Modern Vietnam (1975–present) — reunification, Doi Moi, contemporary",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 1975)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 300
+  },
+  {
+    "name": "people-rulers",
+    "description": "Vietnamese monarchs, emperors, and royal figures",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q13141064",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 200
+  },
+  {
+    "name": "people-military",
+    "description": "Vietnamese military leaders, generals, and soldiers",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q47064",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-writers",
+    "description": "Vietnamese poets, novelists, and literary figures",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q36180",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 400
+  },
+  {
+    "name": "people-scientists",
+    "description": "Vietnamese scientists, researchers, and academics",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q901",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 300
+  },
+  {
+    "name": "people-artists",
+    "description": "Vietnamese painters, sculptors, and visual artists",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q483501",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 300
+  },
+  {
+    "name": "people-revolution",
+    "description": "Vietnamese revolutionaries and independence activists",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q10871364",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 300
+  },
+  {
+    "name": "people-religious",
+    "description": "Vietnamese religious leaders, monks, and clergy",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q15976092",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 200
+  },
+  {
+    "name": "people-educators",
+    "description": "Vietnamese teachers, professors, and education pioneers",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q1231867",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 300
+  },
+  {
+    "name": "people-politicians",
+    "description": "Vietnamese political figures and government officials",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q82955",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-sports",
+    "description": "Vietnamese athletes and sports figures",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q2066131",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 400
+  },
+  {
+    "name": "people-business",
+    "description": "Vietnamese entrepreneurs and business leaders",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q629531",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 200
+  },
+  {
+    "name": "people-diplomats",
+    "description": "Vietnamese diplomats, ambassadors, and foreign relations officials",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q131524",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 200
+  },
+  {
+    "name": "people-journalists",
+    "description": "Vietnamese journalists, reporters, and media figures",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q1930187",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 200
+  },
+  {
+    "name": "people-physicians",
+    "description": "Vietnamese doctors, physicians, and medical professionals",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q2374146",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 200
+  },
+  {
+    "name": "people-engineers",
+    "description": "Vietnamese engineers, architects, and technical innovators",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q266569",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 200
+  },
+  {
+    "name": "people-lawyers",
+    "description": "Vietnamese lawyers, judges, and legal professionals",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q40348",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 200
+  },
+  {
+    "name": "culture-heritage-unesco",
+    "description": "UNESCO World Heritage Sites in Vietnam",
+    "category": "culture",
+    "query_file": "shared/heritage-sites.sparql",
+    "filter": "FILTER EXISTS { ?item wdt:P31 wd:Q9259 . }",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 50
+  },
+  {
+    "name": "culture-heritage-intangible",
+    "description": "UNESCO Intangible Cultural Heritage of Vietnam",
+    "category": "culture",
+    "query_file": "shared/heritage-sites.sparql",
+    "filter": "FILTER EXISTS { ?item wdt:P31 wd:Q570116 . }",
+    "filters": {},
+    "node_type": "Concept",
+    "limit": 100
+  },
+  {
+    "name": "culture-festivals",
+    "description": "Vietnamese traditional festivals and celebrations",
+    "category": "culture",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q132241 .",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 100
+  },
+  {
+    "name": "culture-temples",
+    "description": "Vietnamese temples and spirit shrines",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q44539 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 200
+  },
+  {
+    "name": "culture-pagodas",
+    "description": "Buddhist pagodas and stupas across Vietnam",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q243983 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 200
+  },
+  {
+    "name": "culture-cuisine",
+    "description": "Vietnamese dishes, beverages, and culinary traditions",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q2095 .",
+    "filters": {},
+    "node_type": "Concept",
+    "limit": 200
+  },
+  {
+    "name": "culture-music-instruments",
+    "description": "Traditional Vietnamese musical instruments",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q34379 .",
+    "filters": {},
+    "node_type": "Artifact",
+    "limit": 100
+  },
+  {
+    "name": "culture-clothing",
+    "description": "Vietnamese traditional clothing and fashion",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q42715222 .",
+    "filters": {},
+    "node_type": "Artifact",
+    "limit": 50
+  },
+  {
+    "name": "culture-markets",
+    "description": "Vietnamese markets, bazaars, and trading places",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q162355 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 100
+  },
+  {
+    "name": "culture-theaters",
+    "description": "Vietnamese theaters, opera houses, and performance venues",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q24354 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 100
+  },
+  {
+    "name": "nature-rivers",
+    "description": "Rivers and waterways of Vietnam",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q4022 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 200
+  },
+  {
+    "name": "nature-mountains",
+    "description": "Mountains, peaks, and mountain ranges of Vietnam",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q8502 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 200
+  },
+  {
+    "name": "nature-national-parks",
+    "description": "National parks and protected areas of Vietnam",
+    "category": "nature",
+    "query_file": "shared/heritage-sites.sparql",
+    "filter": "FILTER EXISTS { ?item wdt:P31 wd:Q916333 . }",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 100
+  },
+  {
+    "name": "nature-islands",
+    "description": "Islands and archipelagos of Vietnam",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q23442 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 100
+  },
+  {
+    "name": "nature-beaches",
+    "description": "Beaches and coastal resorts of Vietnam",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q40080 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 100
+  },
+  {
+    "name": "nature-caves",
+    "description": "Caves and grottoes of Vietnam (Son Doong, Phong Nha, etc.)",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q35509 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 100
+  },
+  {
+    "name": "nature-bays",
+    "description": "Bays, gulfs, and coastal inlets of Vietnam",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q37853 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 50
+  },
+  {
+    "name": "nature-forests",
+    "description": "Forests, jungles, and woodlands of Vietnam",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q4421 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 100
+  }
+]
