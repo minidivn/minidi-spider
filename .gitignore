@@ -4,6 +4,14 @@ target/
 # Database (generated at runtime, not committed)
 data/
 
+# Country output directories (configurable in countries.json)
+minidi-*-data/
+
+# Country databases
+*.db
+*.db-wal
+*.db-shm
+
 # OS
 .DS_Store
 Thumbs.db
@@ -25,3 +33,6 @@ Thumbs.db
 # Temp / generated runtime files
 *.log
 *.pid
+
+# Runtime job tracks (ignored)
+jobs/

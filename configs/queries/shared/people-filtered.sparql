@@ -1,0 +1,15 @@
+# Generic: People — with injectable FILTER for occupation, era, etc.
+# {COUNTRY_QID} {LANG} {FILTER} {LIMIT}
+SELECT DISTINCT ?person ?personLabel ?personDescription ?birthDate ?deathDate ?occupation ?occupationLabel WHERE {
+  VALUES ?country { wd:{COUNTRY_QID} }
+  { ?person wdt:P27 ?country . }
+  UNION
+  { ?person wdt:P19 ?birthPlace . ?birthPlace wdt:P17 ?country . }
+  ?person wdt:P31 wd:Q5 .
+  OPTIONAL { ?person wdt:P569 ?birthDate . }
+  OPTIONAL { ?person wdt:P570 ?deathDate . }
+  OPTIONAL { ?person wdt:P106 ?occupation . }
+  {FILTER}
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "{LANG},en" . }
+}
+LIMIT {LIMIT}

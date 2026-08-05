@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-07-27T16:23:02.367828100+00:00",
+  "language_code": "en",
+  "node_types": {
+    "person": 32,
+    "place": 4
+  },
+  "run_at": "2026-07-27T16:23:02.367796300+00:00",
+  "topic": "us",
+  "total_edges": 0,
+  "total_nodes": 36
+}

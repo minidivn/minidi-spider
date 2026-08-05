@@ -1,0 +1,11 @@
+# US-specific: Presidents of the United States.
+SELECT DISTINCT ?person ?personLabel ?personDescription ?birthDate ?deathDate ?startTime ?endTime WHERE {
+  ?person wdt:P39 wd:Q11696 .    # position held = President of the United States
+  OPTIONAL { ?person wdt:P580 ?startTime . }  # start time (presidency)
+  OPTIONAL { ?person wdt:P582 ?endTime . }    # end time
+  OPTIONAL { ?person wdt:P569 ?birthDate . }
+  OPTIONAL { ?person wdt:P570 ?deathDate . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
+}
+ORDER BY ?startTime
+LIMIT 100

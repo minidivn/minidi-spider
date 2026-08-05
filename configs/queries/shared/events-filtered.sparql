@@ -1,0 +1,18 @@
+# Generic: Historical events — with injectable FILTER for era, type, etc.
+# {COUNTRY_QID} {LANG} {FILTER} {LIMIT}
+SELECT DISTINCT ?item ?itemLabel ?itemDescription ?type ?typeLabel ?pointInTime ?startTime ?endTime WHERE {
+  VALUES ?country { wd:{COUNTRY_QID} }
+  { ?item wdt:P276 ?location . ?location wdt:P17 ?country . }
+  UNION
+  { ?item wdt:P17 ?country . }
+  UNION
+  { ?item wdt:P710 ?participant . FILTER(?participant = wd:{COUNTRY_QID}) }
+  { ?item wdt:P585 ?pointInTime . }
+  UNION
+  { ?item wdt:P580 ?startTime . }
+  OPTIONAL { ?item wdt:P31 ?type . }
+  OPTIONAL { ?item wdt:P582 ?endTime . }
+  {FILTER}
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "{LANG},en" . }
+}
+LIMIT {LIMIT}

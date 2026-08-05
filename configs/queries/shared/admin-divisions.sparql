@@ -1,0 +1,11 @@
+# Generic: Administrative divisions via P150 (contains admin division).
+# {COUNTRY_QID} {LANG} {FILTER} {LIMIT}
+SELECT DISTINCT ?item ?itemLabel ?itemDescription ?type ?typeLabel ?coord WHERE {
+  VALUES ?country { wd:{COUNTRY_QID} }
+  ?country wdt:P150 ?item .
+  OPTIONAL { ?item wdt:P31 ?type . }
+  OPTIONAL { ?item wdt:P625 ?coord . }
+  {FILTER}
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "{LANG},en" . }
+}
+LIMIT {LIMIT}

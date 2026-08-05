@@ -1,0 +1,518 @@
+[
+  {
+    "name": "custom-seeds",
+    "description": "Explicitly requested entities for highlights and deep-linking cross-compatibility",
+    "category": "people",
+    "query_inline": "SELECT DISTINCT ?person ?personLabel ?personDescription ?birthDate ?deathDate ?occupationLabel WHERE { VALUES ?person { wd:Q90 wd:Q3602 wd:Q64 wd:Q190128 wd:Q243 wd:Q1191004 wd:Q4117 wd:Q82425 wd:Q10772277 wd:Q46679 wd:Q937 wd:Q7186 wd:Q935 wd:Q6694 wd:Q12091 wd:Q1035 wd:Q38125 wd:Q9021 wd:Q7259 wd:Q8963 wd:Q307 } OPTIONAL { ?person wdt:P569 ?birthDate . } OPTIONAL { ?person wdt:P570 ?deathDate . } OPTIONAL { ?person wdt:P106 ?occ . ?occ rdfs:label ?occupationLabel . FILTER(LANG(?occupationLabel) = \"en\") } SERVICE wikibase:label { bd:serviceParam wikibase:language \"{LANG},en\" . } } LIMIT 100",
+    "node_type": "Person",
+    "limit": 100
+  },
+  {
+    "name": "custom-landmarks",
+    "description": "Explicitly requested US landmarks for highlights",
+    "category": "places",
+    "query_inline": "SELECT DISTINCT ?item ?itemLabel ?itemDescription ?coords WHERE { VALUES ?item { wd:Q61 wd:Q9202 } OPTIONAL { ?item wdt:P625 ?coords . } SERVICE wikibase:label { bd:serviceParam wikibase:language \"{LANG},en\" . } } LIMIT 100",
+    "node_type": "Place",
+    "limit": 100
+  },
+  {
+    "name": "adm-federal",
+    "description": "United States federal entity and District of Columbia",
+    "category": "admin",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?item IN (wd:Q30, wd:Q3551781))",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 2
+  },
+  {
+    "name": "adm-states-northeast",
+    "description": "Northeastern US states (New England, Mid-Atlantic)",
+    "category": "admin",
+    "query_file": "shared/admin-divisions.sparql",
+    "filter": "",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 15
+  },
+  {
+    "name": "adm-states-south",
+    "description": "Southern US states (South Atlantic, East South Central, West South Central)",
+    "category": "admin",
+    "query_file": "shared/admin-divisions.sparql",
+    "filter": "",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 20
+  },
+  {
+    "name": "adm-states-midwest",
+    "description": "Midwestern US states (East North Central, West North Central)",
+    "category": "admin",
+    "query_file": "shared/admin-divisions.sparql",
+    "filter": "",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 15
+  },
+  {
+    "name": "adm-states-west",
+    "description": "Western US states (Mountain, Pacific)",
+    "category": "admin",
+    "query_file": "shared/admin-divisions.sparql",
+    "filter": "",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 15
+  },
+  {
+    "name": "adm-territories",
+    "description": "US territories and outlying islands (Puerto Rico, Guam, USVI, etc.)",
+    "category": "admin",
+    "query_file": "shared/admin-divisions.sparql",
+    "filter": "",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 20
+  },
+  {
+    "name": "adm-major-cities",
+    "description": "Major US cities with population over 1 million",
+    "category": "admin",
+    "query_file": "shared/cities.sparql",
+    "filter": "FILTER(?population > 1000000)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 50
+  },
+  {
+    "name": "adm-medium-cities",
+    "description": "Medium US cities with population between 200,000 and 1 million",
+    "category": "admin",
+    "query_file": "shared/cities.sparql",
+    "filter": "FILTER(?population >= 200000 && ?population <= 1000000)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 200
+  },
+  {
+    "name": "hist-pre-colonial",
+    "description": "Pre-colonial American history — Indigenous civilizations before 1607",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER((BOUND(?startTime) && YEAR(?startTime) < 1607) || (BOUND(?pointInTime) && YEAR(?pointInTime) < 1607))",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 500
+  },
+  {
+    "name": "hist-colonial",
+    "description": "Colonial America — European settlement, Thirteen Colonies, 1607–1776",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER((BOUND(?startTime) && YEAR(?startTime) >= 1607 && YEAR(?startTime) <= 1776) || (BOUND(?pointInTime) && YEAR(?pointInTime) >= 1607 && YEAR(?pointInTime) <= 1776))",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 500
+  },
+  {
+    "name": "hist-revolution",
+    "description": "American Revolution — war, Declaration of Independence, 1775–1783",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER((BOUND(?startTime) && YEAR(?startTime) >= 1775 && YEAR(?startTime) <= 1783) || (BOUND(?pointInTime) && YEAR(?pointInTime) >= 1775 && YEAR(?pointInTime) <= 1783))",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 300
+  },
+  {
+    "name": "hist-early-republic",
+    "description": "Early Republic — Constitution, westward expansion begins, 1783–1815",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER((BOUND(?startTime) && YEAR(?startTime) >= 1783 && YEAR(?startTime) <= 1815) || (BOUND(?pointInTime) && YEAR(?pointInTime) >= 1783 && YEAR(?pointInTime) <= 1815))",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 500
+  },
+  {
+    "name": "hist-expansion",
+    "description": "Westward Expansion — Manifest Destiny, Mexican-American War, 1815–1861",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER((BOUND(?startTime) && YEAR(?startTime) >= 1815 && YEAR(?startTime) <= 1861) || (BOUND(?pointInTime) && YEAR(?pointInTime) >= 1815 && YEAR(?pointInTime) <= 1861))",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 500
+  },
+  {
+    "name": "hist-civil-war",
+    "description": "American Civil War — secession, battles, emancipation, 1861–1865",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER((BOUND(?startTime) && YEAR(?startTime) >= 1861 && YEAR(?startTime) <= 1865) || (BOUND(?pointInTime) && YEAR(?pointInTime) >= 1861 && YEAR(?pointInTime) <= 1865))",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 500
+  },
+  {
+    "name": "hist-reconstruction",
+    "description": "Reconstruction and Gilded Age — 1865–1900",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER((BOUND(?startTime) && YEAR(?startTime) >= 1865 && YEAR(?startTime) <= 1900) || (BOUND(?pointInTime) && YEAR(?pointInTime) >= 1865 && YEAR(?pointInTime) <= 1900))",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 500
+  },
+  {
+    "name": "hist-wwi-great-depression",
+    "description": "World War I, Roaring Twenties, Great Depression, 1900–1940",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER((BOUND(?startTime) && YEAR(?startTime) >= 1900 && YEAR(?startTime) <= 1940) || (BOUND(?pointInTime) && YEAR(?pointInTime) >= 1900 && YEAR(?pointInTime) <= 1940))",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 500
+  },
+  {
+    "name": "hist-wwii",
+    "description": "World War II — Pearl Harbor, home front, 1941–1945",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER((BOUND(?startTime) && YEAR(?startTime) >= 1941 && YEAR(?startTime) <= 1945) || (BOUND(?pointInTime) && YEAR(?pointInTime) >= 1941 && YEAR(?pointInTime) <= 1945))",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 500
+  },
+  {
+    "name": "hist-cold-war-modern",
+    "description": "Cold War, Civil Rights, contemporary America, 1946–present",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER((BOUND(?startTime) && YEAR(?startTime) >= 1946) || (BOUND(?pointInTime) && YEAR(?pointInTime) >= 1946))",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 1000
+  },
+  {
+    "name": "people-presidents",
+    "description": "Presidents of the United States",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q11696",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 100
+  },
+  {
+    "name": "people-congress",
+    "description": "US Congress members — Senators and Representatives",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q16707842",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-military",
+    "description": "US military personnel and leaders",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q47064",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-writers",
+    "description": "American writers, authors, poets, and playwrights",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q36180",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-scientists",
+    "description": "American scientists and researchers",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q901",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-artists",
+    "description": "American visual artists, painters, sculptors, and illustrators",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q483501",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-activists",
+    "description": "American civil rights activists and social advocates",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q188094",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-educators",
+    "description": "American educators, professors, and academic teachers",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q1231867",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-politicians-state",
+    "description": "US state-level politicians — governors, state legislators, mayors",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q82955",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-sports",
+    "description": "American athletes and sports figures",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q2066131",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-business",
+    "description": "American business executives, entrepreneurs, and financiers",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q629531",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-entertainers",
+    "description": "American entertainers — actors, comedians, performers",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q43845",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-religious",
+    "description": "American religious leaders, clergy, and theologians",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q15976092",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-journalists",
+    "description": "American journalists, reporters, and media correspondents",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q1930187",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-physicians",
+    "description": "American physicians, surgeons, and medical doctors",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q2374146",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-lawyers",
+    "description": "American lawyers, judges, and legal professionals",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q40348",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "culture-heritage-unesco",
+    "description": "UNESCO World Heritage Sites and national parks in the United States",
+    "category": "culture",
+    "query_file": "shared/heritage-sites.sparql",
+    "filter": "",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 200
+  },
+  {
+    "name": "culture-museums",
+    "description": "American museums, galleries, and cultural institutions",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?type = wd:Q33506)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 500
+  },
+  {
+    "name": "culture-festivals",
+    "description": "American festivals, fairs, and cultural celebrations",
+    "category": "culture",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER EXISTS { ?item wdt:P31 wd:Q132241 }",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 300
+  },
+  {
+    "name": "culture-cuisine",
+    "description": "American cuisine, dishes, and food traditions",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?type = wd:Q746549)",
+    "filters": {},
+    "node_type": "Place",
+    "limit": 200
+  },
+  {
+    "name": "culture-music",
+    "description": "American musicians, composers, and music groups",
+    "category": "culture",
+    "query_file": "shared/people-filtered.sparql",
+    "filter": "FILTER EXISTS { ?person wdt:P106 wd:Q639669 }",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "culture-architecture",
+    "description": "Notable American architectural structures and landmarks",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?type = wd:Q811979)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 500
+  },
+  {
+    "name": "culture-sports-venues",
+    "description": "American sports teams, athletes, and venues",
+    "category": "culture",
+    "query_file": "shared/sports-entities.sparql",
+    "filter": "",
+    "filters": {},
+    "node_type": "Place",
+    "limit": 500
+  },
+  {
+    "name": "culture-landmarks",
+    "description": "American landmarks, monuments, and notable places",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?type IN (wd:Q41176, wd:Q498990, wd:Q570116))",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 500
+  },
+  {
+    "name": "nature-national-parks",
+    "description": "US national parks, monuments, and protected wilderness areas",
+    "category": "nature",
+    "query_file": "shared/heritage-sites.sparql",
+    "filter": "FILTER EXISTS { ?item wdt:P31 wd:Q916333 }",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 200
+  },
+  {
+    "name": "nature-forests",
+    "description": "US national forests and woodlands",
+    "category": "nature",
+    "query_file": "shared/geographic-features.sparql",
+    "filter": "FILTER(?type = wd:Q4421)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 300
+  },
+  {
+    "name": "nature-rivers",
+    "description": "Major US rivers and waterways",
+    "category": "nature",
+    "query_file": "shared/geographic-features.sparql",
+    "filter": "FILTER(?type = wd:Q4022)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 300
+  },
+  {
+    "name": "nature-mountains",
+    "description": "US mountain ranges and prominent peaks",
+    "category": "nature",
+    "query_file": "shared/geographic-features.sparql",
+    "filter": "FILTER(?type IN (wd:Q8502, wd:Q159334))",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 300
+  },
+  {
+    "name": "nature-lakes",
+    "description": "Major US lakes and reservoirs",
+    "category": "nature",
+    "query_file": "shared/geographic-features.sparql",
+    "filter": "FILTER(?type = wd:Q23397)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 300
+  },
+  {
+    "name": "nature-islands",
+    "description": "US islands and archipelagos",
+    "category": "nature",
+    "query_file": "shared/geographic-features.sparql",
+    "filter": "FILTER(?type = wd:Q23442)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 300
+  },
+  {
+    "name": "nature-beaches",
+    "description": "US beaches, shorelines, and coastal attractions",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?type = wd:Q40080)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 200
+  },
+  {
+    "name": "nature-deserts",
+    "description": "US deserts and arid regions",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?type = wd:Q8514)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 100
+  }
+]

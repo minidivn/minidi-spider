@@ -34,9 +34,9 @@ impl EmbeddingIndex {
             let text = format!(
                 "{} {} {} {}",
                 node.label,
-                node.label_vi.as_deref().unwrap_or(""),
+                node.label_local.as_deref().unwrap_or(""),
                 node.description,
-                node.description_vi.as_deref().unwrap_or("")
+                node.description_local.as_deref().unwrap_or("")
             );
             for word in text.split_whitespace() {
                 let cleaned = word
@@ -58,9 +58,9 @@ impl EmbeddingIndex {
             let text = format!(
                 "{} {} {} {}",
                 node.label,
-                node.label_vi.as_deref().unwrap_or(""),
+                node.label_local.as_deref().unwrap_or(""),
                 node.description,
-                node.description_vi.as_deref().unwrap_or("")
+                node.description_local.as_deref().unwrap_or("")
             );
 
             let mut vec = vec![0.0_f32; dimension];

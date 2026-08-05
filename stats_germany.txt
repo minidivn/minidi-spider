@@ -1,0 +1,41 @@
+Total Nodes in Germany: 5060
+Germany-related: 291 (5.75%)
+Other country related: 16 (0.32%)
+Both related: 8 (0.16%)
+Neither/Other: 4745 (93.77%)
+
+--- Example Germany-related nodes in Germany database ---
+  * Neustadt - Stadtteil von Hamburg
+  * Ernst Lubitsch - deutsch-amerikanischer Filmregisseur und Schauspieler (1892–1947)
+  * FC St. Pauli - Sportverein aus Hamburg-St. Pauli
+  * Johannes Kepler - deutscher Naturphilosoph, Mathematiker, Astronom, Astrologe, Optiker und evangelischer Theologe
+  * Max Ophüls - deutsch-französischer Film-, Theater- und Hörspielregisseur
+  * Mennonitengemeinde in Helmstadt - religious community and congregation in Helmstadt, Germany
+  * Hammerbrook - Stadtteil von Hamburg
+  * Amt Stollhofen - Verwaltungseinheit in Baden bis 1809 s.a https://regionalia.blb-karlsruhe.de/frontdoor/deliver/index/docId/26759/file/BLB_Gutmann_Amt_Stollhofen.pdf
+  * Schwanenwerder - Insel im Ortsteil Nikolassee, Bezirk Steglitz-Zehlendorf, Berlin
+  * Winterhude - Stadtteil von Hamburg im Bezirk Hamburg-Nord
+
+--- Example Other-related nodes in Germany database ---
+  * Level 3 Communications - US-amerikanischer internationaler Anbieter von Kommunikationsdienstleistungen mit Sitz in Broomfield, Colorado
+  * Vịnh Hạ Long - Bucht in Vietnam
+  * Treaty of Andernach - 1474 treaty between the Holy Roman Empire and France
+  * Jason Campbell - US-amerikanischer American-Football-Spieler
+  * Dematic - US-amerikanisches Unternehmen und Anbieter von Automatisierungs-, Materialfluss- und Fördertechnik
+  * Deutsche Norton - ehemalige Tochtergesellschaft des US-amerikanischen Schleifmittelherstellers Norton Co.
+  * Rhine campaign of 1713 - French military campaign
+  * Reinhold Schünzel - US-amerikanischer Schauspieler
+  * Wolf Blitzer - US-amerikanischer Journalist und Fernsehmoderator
+  * Paris - Hauptstadt und bevölkerungsreichste Stadt Frankreichs
+
+--- Example Neither/Other nodes in Germany database ---
+  * SV Algermissen - deutscher Fußballverein
+  * SSV Jahn Regensburg - Sportverein aus Regensburg, Bayern
+  * FSV Cottbus 99 - deutscher Fußballverein
+  * Haßlach - Nebenfluss der Rodach
+  * Belagerung von Heidelberg - Konflikt im Dreißigjährigen Krieg (1622)
+  * Vlad the Impaler's expedition across the Danube - 1461–1462 military expedition
+  * Ammer - Nebenfluss des Neckars
+  * Bungsberg - höchster Berg von Schleswig-Holstein
+  * Leibniztempel - Pavillon im Georgengarten in Hannover
+  * Reichstag zu Worms - Reichstag zu Worms 1098

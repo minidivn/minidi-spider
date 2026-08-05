@@ -1,0 +1,502 @@
+[
+  {
+    "name": "adm-national",
+    "description": "China as a country entity and its 34 province-level administrative divisions",
+    "category": "admin",
+    "query_file": "shared/admin-divisions.sparql",
+    "filter": "",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 50
+  },
+  {
+    "name": "adm-north",
+    "description": "Northern China — Beijing, Tianjin, Hebei, Shanxi, Inner Mongolia",
+    "category": "admin",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?item wdt:P131 wd:Q956 || ?item wdt:P131 wd:Q11736 || ?item wdt:P131 wd:Q21208 || ?item wdt:P131 wd:Q46913 || ?item wdt:P131 wd:Q41079)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 500
+  },
+  {
+    "name": "adm-northeast",
+    "description": "Northeast China (Manchuria) — Liaoning, Jilin, Heilongjiang",
+    "category": "admin",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?item wdt:P131 wd:Q81089 || ?item wdt:P131 wd:Q45208 || ?item wdt:P131 wd:Q19206)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 500
+  },
+  {
+    "name": "adm-east",
+    "description": "Eastern China — Shanghai, Jiangsu, Zhejiang, Anhui, Fujian, Jiangxi, Shandong",
+    "category": "admin",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?item wdt:P131 wd:Q8686 || ?item wdt:P131 wd:Q46850 || ?item wdt:P131 wd:Q16967 || ?item wdt:P131 wd:Q40956 || ?item wdt:P131 wd:Q41705 || ?item wdt:P131 wd:Q47062 || ?item wdt:P131 wd:Q43407)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 500
+  },
+  {
+    "name": "adm-central-south",
+    "description": "Central and Southern China — Henan, Hubei, Hunan, Guangdong, Guangxi, Hainan",
+    "category": "admin",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?item wdt:P131 wd:Q43684 || ?item wdt:P131 wd:Q46862 || ?item wdt:P131 wd:Q45761 || ?item wdt:P131 wd:Q15175 || ?item wdt:P131 wd:Q15176 || ?item wdt:P131 wd:Q16600)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 500
+  },
+  {
+    "name": "adm-southwest",
+    "description": "Southwest China — Chongqing, Sichuan, Guizhou, Yunnan, Tibet",
+    "category": "admin",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?item wdt:P131 wd:Q11725 || ?item wdt:P131 wd:Q19770 || ?item wdt:P131 wd:Q47097 || ?item wdt:P131 wd:Q43194 || ?item wdt:P131 wd:Q17269)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 500
+  },
+  {
+    "name": "adm-northwest",
+    "description": "Northwest China — Shaanxi, Gansu, Qinghai, Ningxia, Xinjiang",
+    "category": "admin",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?item wdt:P131 wd:Q47974 || ?item wdt:P131 wd:Q42392 || ?item wdt:P131 wd:Q45833 || ?item wdt:P131 wd:Q57448 || ?item wdt:P131 wd:Q34800)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 500
+  },
+  {
+    "name": "adm-major-cities",
+    "description": "Major Chinese cities with population over 5 million",
+    "category": "admin",
+    "query_file": "shared/cities.sparql",
+    "filter": "FILTER(?population > 5000000)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 100
+  },
+  {
+    "name": "adm-medium-cities",
+    "description": "Medium Chinese cities with population between 1 and 5 million",
+    "category": "admin",
+    "query_file": "shared/cities.sparql",
+    "filter": "FILTER(?population >= 1000000 && ?population <= 5000000)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 300
+  },
+  {
+    "name": "adm-special",
+    "description": "Special administrative regions — Hong Kong, Macau, and Taiwan",
+    "category": "admin",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?item wdt:P131 wd:Q8646 || ?item wdt:P131 wd:Q14773 || ?item wdt:P131 wd:Q865)",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 300
+  },
+  {
+    "name": "hist-ancient",
+    "description": "Ancient China before 221 BCE — Xia, Shang, Zhou dynasties, Warring States",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) < -220)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 300
+  },
+  {
+    "name": "hist-imperial-early",
+    "description": "Early Imperial China (221 BCE–589 CE) — Qin, Han, Three Kingdoms, Jin, Southern Dynasties",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= -220 && YEAR(?pointInTime) < 589)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 400
+  },
+  {
+    "name": "hist-imperial-mid",
+    "description": "Mid-Imperial China (589–1279) — Sui, Tang, Five Dynasties, Song dynasties",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 589 && YEAR(?pointInTime) < 1279)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 500
+  },
+  {
+    "name": "hist-mongol-yuan",
+    "description": "Mongol-led Yuan dynasty (1271–1368) — Kublai Khan, Mongol rule over China",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 1271 && YEAR(?pointInTime) < 1368)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 200
+  },
+  {
+    "name": "hist-ming",
+    "description": "Ming dynasty (1368–1644) — Great Wall expansion, Forbidden City, maritime exploration",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 1368 && YEAR(?pointInTime) < 1644)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 400
+  },
+  {
+    "name": "hist-qing",
+    "description": "Qing dynasty (1644–1912) — last imperial dynasty, Manchu rule, Opium Wars, Taiping Rebellion",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 1644 && YEAR(?pointInTime) < 1912)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 500
+  },
+  {
+    "name": "hist-republic",
+    "description": "Republic of China (1912–1949) — Beiyang government, Nationalist era, Warlord period",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 1912 && YEAR(?pointInTime) < 1949)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 300
+  },
+  {
+    "name": "hist-civil-war-wwii",
+    "description": "Chinese Civil War and Second Sino-Japanese War (1927–1949)",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 1927 && YEAR(?pointInTime) < 1949)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 400
+  },
+  {
+    "name": "hist-prc-early",
+    "description": "Early People's Republic of China (1949–1978) — Mao era, Great Leap Forward, Cultural Revolution",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 1949 && YEAR(?pointInTime) < 1978)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 400
+  },
+  {
+    "name": "hist-modern",
+    "description": "Modern China (1978–present) — Reform and Opening Up, Deng Xiaoping, contemporary era",
+    "category": "history",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "FILTER(YEAR(?pointInTime) >= 1978)",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 500
+  },
+  {
+    "name": "people-rulers",
+    "description": "Chinese emperors, kings, and monarchs across all dynasties",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q13141064",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 300
+  },
+  {
+    "name": "people-military",
+    "description": "Chinese military leaders, generals, strategists, and soldiers",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q47064",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 600
+  },
+  {
+    "name": "people-writers",
+    "description": "Chinese poets, novelists, essayists, and literary figures",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q36180",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 600
+  },
+  {
+    "name": "people-scientists",
+    "description": "Chinese scientists, mathematicians, and researchers across all fields",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q901",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-artists",
+    "description": "Chinese painters, sculptors, calligraphers, and visual artists",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q483501",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 400
+  },
+  {
+    "name": "people-philosophers",
+    "description": "Chinese philosophers and thinkers — Confucius, Laozi, Zhuangzi, and later scholars",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q4964182",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 300
+  },
+  {
+    "name": "people-educators",
+    "description": "Chinese teachers, professors, scholars, and education reformers",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q1231867",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 400
+  },
+  {
+    "name": "people-politicians",
+    "description": "Chinese political figures, government officials, and party leaders",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q82955",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 600
+  },
+  {
+    "name": "people-sports",
+    "description": "Chinese athletes, Olympians, and sports figures",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q2066131",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "people-business",
+    "description": "Chinese entrepreneurs, business leaders, and industrialists",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q629531",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 400
+  },
+  {
+    "name": "people-revolutionaries",
+    "description": "Chinese revolutionaries and political activists — from Taiping to Communist Revolution",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q10871364",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 300
+  },
+  {
+    "name": "people-religious",
+    "description": "Chinese religious leaders, Buddhist monks, Taoist masters, and clergy",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q15976092",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 300
+  },
+  {
+    "name": "people-physicians",
+    "description": "Chinese doctors, physicians, and traditional Chinese medicine practitioners",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q2374146",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 300
+  },
+  {
+    "name": "people-entertainers",
+    "description": "Chinese actors, musicians, dancers, and performing artists",
+    "category": "people",
+    "query_file": "shared/people-by-occupation.sparql",
+    "filter": "# OCCUPATION_QID=Q43845",
+    "filters": {},
+    "node_type": "Person",
+    "limit": 500
+  },
+  {
+    "name": "culture-heritage-unesco",
+    "description": "UNESCO World Heritage Sites in China — Great Wall, Forbidden City, Terracotta Army, and more",
+    "category": "culture",
+    "query_file": "shared/heritage-sites.sparql",
+    "filter": "FILTER EXISTS { ?item wdt:P31 wd:Q9259 . }",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 100
+  },
+  {
+    "name": "culture-dynasties",
+    "description": "Chinese dynasties and historical periods from Xia to Qing",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?item wdt:P31 wd:Q170135 || ?item wdt:P31 wd:Q105696)",
+    "filters": {},
+    "node_type": "Concept",
+    "limit": 100
+  },
+  {
+    "name": "culture-temples",
+    "description": "Chinese temples, shrines, and Taoist/Buddhist religious sites",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q44539 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 300
+  },
+  {
+    "name": "culture-palaces",
+    "description": "Chinese palaces and imperial residences — Forbidden City, Summer Palace, and more",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q16560 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 100
+  },
+  {
+    "name": "culture-cuisine",
+    "description": "Chinese dishes, regional cuisines, and culinary traditions",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q474613 .",
+    "filters": {},
+    "node_type": "Concept",
+    "limit": 300
+  },
+  {
+    "name": "culture-music",
+    "description": "Chinese musical instruments and traditional music genres",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "FILTER(?item wdt:P31 wd:Q34379 || ?item wdt:P31 wd:Q42989)",
+    "filters": {},
+    "node_type": "Artifact",
+    "limit": 200
+  },
+  {
+    "name": "culture-opera",
+    "description": "Chinese opera forms — Peking opera, Kunqu, and regional opera traditions",
+    "category": "culture",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q190718 .",
+    "filters": {},
+    "node_type": "Concept",
+    "limit": 100
+  },
+  {
+    "name": "culture-festivals",
+    "description": "Chinese traditional festivals and celebrations — Lunar New Year, Dragon Boat, Mid-Autumn, and more",
+    "category": "culture",
+    "query_file": "shared/events-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q132241 .",
+    "filters": {},
+    "node_type": "Event",
+    "limit": 100
+  },
+  {
+    "name": "nature-rivers",
+    "description": "Major rivers and waterways of China — Yangtze, Yellow River, Pearl River, and more",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q4022 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 200
+  },
+  {
+    "name": "nature-mountains",
+    "description": "Mountains, peaks, and ranges of China — Himalayas, Kunlun, Five Great Mountains, and more",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q8502 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 300
+  },
+  {
+    "name": "nature-lakes",
+    "description": "Lakes of China — Qinghai Lake, Poyang Lake, Dongting Lake, Taihu, and more",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q23397 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 200
+  },
+  {
+    "name": "nature-forests",
+    "description": "Forests, woodlands, and nature reserves across China",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q4421 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 150
+  },
+  {
+    "name": "nature-islands",
+    "description": "Islands and archipelagos of China — Hainan, Zhoushan, Paracel Islands, and more",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q23442 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 200
+  },
+  {
+    "name": "nature-deserts",
+    "description": "Deserts of China — Gobi, Taklamakan, Badain Jaran, Tengger, and more",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q8514 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 50
+  },
+  {
+    "name": "nature-national-parks",
+    "description": "National parks and protected areas of China — Zhangjiajie, Jiuzhaigou, Huangshan, and more",
+    "category": "nature",
+    "query_file": "shared/heritage-sites.sparql",
+    "filter": "FILTER EXISTS { ?item wdt:P31 wd:Q916333 . }",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 150
+  },
+  {
+    "name": "nature-caves",
+    "description": "Caves and karst formations of China — Reed Flute Cave, Shuanghe Cave, and more",
+    "category": "nature",
+    "query_file": "shared/places-filtered.sparql",
+    "filter": "?item wdt:P31 wd:Q35509 .",
+    "filters": { "has_coords": true },
+    "node_type": "Place",
+    "limit": 100
+  }
+]

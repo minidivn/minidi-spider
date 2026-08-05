@@ -1,0 +1,156 @@
+# =============================================================================
+# EXAMPLE: Incremental Data Fill Workflow
+# =============================================================================
+# Copy this file to minidivn/minidi-vn-data/.github/workflows/incremental-fill.yml
+# to enable automated daily partition crawling.
+#
+# Setup:
+#   1. Add DATA_REPO_TOKEN secret to the DATA repo (not the tool repo):
+#      gh secret set DATA_REPO_TOKEN -R minidivn/minidi-vn-data
+#   2. The token needs `repo` scope to check out minidi-spider (public).
+#   3. Seed cursor.json in _data/cursor.json (see examples/cursor.seed.json)
+#   4. Trigger: gh workflow run incremental-fill.yml -R minidivn/minidi-vn-data
+#
+# Architecture:
+#   minidi-vn-data (this repo) → checks out minidi-spider (public) → builds → crawls → commits
+# =============================================================================
+
+name: Incremental Data Fill
+
+on:
+  workflow_dispatch:
+    inputs:
+      partition:
+        description: 'Specific partition (e.g. adm-hanoi). Empty = use cursor.'
+        required: false
+        default: ''
+  schedule:
+    - cron: '0 4 * * *'
+
+env:
+  RUST_LOG: info
+
+jobs:
+  incremental-crawl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout data repo (this repo)
+        uses: actions/checkout@v4
+        with:
+          path: data
+
+      - name: Checkout minidi-spider (public tool)
+        uses: actions/checkout@v4
+        with:
+          repository: minidivn/minidi-spider
+          path: tool
+
+      - name: Restore Rust cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            tool/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('tool/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build minidi-spider
+        working-directory: tool
+        run: cargo build --release
+        timeout-minutes: 20
+
+      - name: Determine partition
+        id: partition
+        working-directory: data
+        run: |
+          CURSOR="_data/cursor.json"
+          P="${{ inputs.partition }}"
+          [ -z "$P" ] && [ -f "$CURSOR" ] && P=$(python3 -c "import json;print(json.load(open('$CURSOR')).get('current_partition',''))")
+          [ -z "$P" ] && P="adm-vn-country"
+          echo "partition=$P" >> $GITHUB_OUTPUT
+          echo "→ $P"
+
+      - name: Crawl partition
+        working-directory: tool
+        run: cargo run --release -- crawl --partition ${{ steps.partition.outputs.partition }} --db /tmp/spider.db --progress
+        timeout-minutes: 30
+
+      - name: Export
+        working-directory: tool
+        run: cargo run --release -- export --db /tmp/spider.db --output /tmp/export
+        timeout-minutes: 10
+
+      - name: Merge into data repo
+        working-directory: data
+        run: |
+          python3 << 'PYEOF'
+          import json, os
+          P = "${{ steps.partition.outputs.partition }}"
+          fresh = json.load(open("/tmp/export/index.json"))
+          existing = {"meta":{"entity_count":0},"nodes":[],"edges":[]}
+          if os.path.exists("docs/index.json"):
+            existing = json.load(open("docs/index.json"))
+
+          seen = {n["id"] for n in existing["nodes"]}
+          for n in fresh["nodes"]:
+            if n["id"] not in seen:
+              existing["nodes"].append(n); seen.add(n["id"])
+
+          seen_e = {f'{e["s"]}|{e["r"]}|{e["t"]}' for e in existing["edges"]}
+          for e in fresh["edges"]:
+            k = f'{e["s"]}|{e["r"]}|{e["t"]}'
+            if k not in seen_e:
+              existing["edges"].append(e); seen_e.add(k)
+
+          existing["meta"]["entity_count"] = len(existing["nodes"])
+          existing["meta"]["edge_count"] = len(existing["edges"])
+          existing["meta"]["last_partition"] = P
+
+          json.dump(existing, open("docs/index.json",'w'))
+          lite = [{"id":n["id"],"l":n["l"],"lv":n.get("lv"),"t":n["t"],"u":n["u"]} for n in existing["nodes"]]
+          json.dump(lite, open("docs/index.lite.json",'w'))
+          print(f"Merged: +{len(fresh['nodes'])} nodes = {existing['meta']['entity_count']} total")
+          PYEOF
+
+          cp /tmp/export/v1/ docs/v1/ 2>/dev/null || true
+          cp /tmp/export/embeddings.* docs/ 2>/dev/null || true
+          cp /tmp/export/sources.json docs/ 2>/dev/null || true
+
+      - name: Advance cursor
+        id: cursor
+        working-directory: data
+        run: |
+          C="_data/cursor.json"
+          CUR="${{ steps.partition.outputs.partition }}"
+          NEXT=$(cd ../tool && cargo run --release -- crawl --list-partitions 2>/dev/null | \
+            awk -v c="$CUR" '{if(f){print $1;exit}}f{if($1==c)f=1}')
+          python3 << PYEOF
+          import json, os, subprocess
+          c = json.load(open("$C")) if os.path.exists("$C") else {"completed":[],"remaining":[]}
+          if "$CUR" not in c["completed"]: c["completed"].append("$CUR")
+          c["current_partition"] = "$NEXT"
+          c["progress"] = f'{len(c["completed"])}/50'
+          c["updated_at"] = subprocess.getoutput("date -u +%Y-%m-%dT%H:%M:%SZ")
+          json.dump(c, open("$C",'w'), indent=2)
+          print(f'Progress: {c["progress"]} → next: {"$NEXT" or "DONE"}')
+          PYEOF
+          [ -z "$NEXT" ] && echo "all_done=true" >> $GITHUB_OUTPUT
+
+      - name: Commit
+        working-directory: data
+        run: |
+          git config user.name "minidi-spider[bot]"
+          git config user.email "bot@minidivn.org"
+          git add docs/ _data/
+          git diff --cached --quiet || {
+            git commit -m "feat(data): add ${{ steps.partition.outputs.partition }}" && git push
+          }
+
+      - name: Tag complete
+        if: steps.cursor.outputs.all_done == 'true'
+        run: |
+          V="v$(date -u +%Y.%m).0"
+          gh release create "$V" -R ${{ github.repository }} -t "Data Release $V" --notes "Initial fill complete"

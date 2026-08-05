@@ -1,3 +1,5 @@
+pub mod store;
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -48,16 +50,16 @@ pub struct HyperNode {
     pub id: String,
     /// Primary label (English)
     pub label: String,
-    /// Vietnamese label (if available)
-    pub label_vi: Option<String>,
+    /// Native language label (if available, e.g. Vietnamese, Chinese)
+    pub label_local: Option<String>,
     /// Short description (English)
     pub description: String,
-    /// Vietnamese description
-    pub description_vi: Option<String>,
+    /// Native language description
+    pub description_local: Option<String>,
     /// Alternative names
     pub aliases: Vec<String>,
-    /// Vietnamese aliases
-    pub aliases_vi: Vec<String>,
+    /// Native language aliases
+    pub aliases_local: Vec<String>,
     /// Entity type
     pub node_type: NodeType,
     /// Permalink

@@ -1,0 +1,11 @@
+<type>(<scope>): <subject>
+
+<body: what & why, wrapped at 72 chars>
+
+# --- instructions (comment lines are stripped automatically) ---
+# type (required): feat | fix | docs | chore | refactor | test | perf | build | ci | style | revert
+# scope (optional): lowercase kebab-case, e.g. sparql, partitions, export, tooling
+# subject: imperative mood, <= 50 chars, no trailing period
+# body: only if it adds "why" context; wrap at 72 chars
+# breaking change: add ! after the scope, e.g. feat(export)!: change partition layout
+# See docs/tooling/GIT_BEST_PRACTICES.md for the full guide.

@@ -1,0 +1,15 @@
+# Generic: People filtered by occupation (P106).
+# {COUNTRY_QID} {LANG} {OCCUPATION_QID} {LIMIT}
+SELECT DISTINCT ?person ?personLabel ?personDescription ?birthDate ?deathDate ?occupation ?occupationLabel WHERE {
+  VALUES ?country { wd:{COUNTRY_QID} }
+  { ?person wdt:P27 ?country . }
+  UNION
+  { ?person wdt:P19 ?birthPlace . ?birthPlace wdt:P17 ?country . }
+  ?person wdt:P31 wd:Q5 .
+  ?person wdt:P106 wd:{OCCUPATION_QID} .
+  OPTIONAL { ?person wdt:P569 ?birthDate . }
+  OPTIONAL { ?person wdt:P570 ?deathDate . }
+  OPTIONAL { ?person wdt:P106 ?occupation . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "{LANG},en" . }
+}
+LIMIT {LIMIT}

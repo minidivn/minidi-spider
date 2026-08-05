@@ -1,0 +1,18 @@
+{
+  "vn": {
+    "source": "../../Minidi/Data/vn_words/Viet74K.txt",
+    "description": "Vietnamese 74K wordlist (Viet74K.txt)"
+  },
+  "en": {
+    "source": "../../Minidi/Data/en_words/words.txt",
+    "description": "English dictionary word list"
+  },
+  "zh": {
+    "source": "../../Minidi/Data/zh_words/words.txt",
+    "description": "Chinese character frequency dictionary list"
+  },
+  "fr": {
+    "source": "../../Minidi/Data/fr_words/words.txt",
+    "description": "French dictionary wordlist"
+  }
+}

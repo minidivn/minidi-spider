@@ -1,0 +1,12 @@
+# Generic: Places / geography entities located in a country.
+# {COUNTRY_QID} = WikiData QID for the country
+# {LANG} = label language (e.g. "en", "vi", "zh")
+# {LIMIT} = maximum number of results
+SELECT DISTINCT ?item ?itemLabel ?itemDescription ?type ?typeLabel ?coord WHERE {
+  VALUES ?country { wd:{COUNTRY_QID} }
+  { ?item wdt:P17 ?country . }
+  ?item wdt:P31 ?type .
+  OPTIONAL { ?item wdt:P625 ?coord . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "{LANG},en" . }
+}
+LIMIT {LIMIT}
