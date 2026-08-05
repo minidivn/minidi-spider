@@ -18,7 +18,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check-data:
+    runs-on: ubuntu-latest
+    outputs:
+      has_data: ${{ steps.check.outputs.has_data }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for exported data
+        id: check
+        run: |
+          if [ -f docs/_data/index.json ]; then
+            echo "has_data=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_data=false" >> "$GITHUB_OUTPUT"
+            echo "No exported data present; skipping validation and deploy."
+          fi
+
   validate:
+    needs: check-data
+    if: needs.check-data.outputs.has_data == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -69,7 +88,8 @@ jobs:
           path: docs/
 
   deploy:
-    needs: validate
+    needs: [check-data, validate]
+    if: needs.check-data.outputs.has_data == 'true'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

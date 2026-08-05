@@ -1,0 +1,14 @@
+#!/bin/sh
+# commit-msg hook — validates commit messages against
+# docs/tooling/GIT_BEST_PRACTICES.md via scripts/check_commit_msg.py.
+# Installed into .git/hooks/ by: python3 scripts/install-git-hooks.py
+
+repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+
+if python3 --version >/dev/null 2>&1; then
+    PY=python3
+else
+    PY=python
+fi
+
+exec "$PY" "$repo_root/scripts/check_commit_msg.py" "$1"

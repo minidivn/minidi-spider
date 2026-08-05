@@ -336,6 +336,12 @@ cargo run -- search "president"
 2. Implement the `DataSource` trait (see `wikidata.rs` for reference)
 3. Register in `build_registry()` in `main.rs`
 
+### Docs & tooling
+
+- [`docs/AI_GUIDELINE.md`](docs/AI_GUIDELINE.md) — how to work in this repo (for AI agents and humans)
+- [`docs/tooling/GIT_BEST_PRACTICES.md`](docs/tooling/GIT_BEST_PRACTICES.md) — branching, commits, PRs, hooks
+- Install commit-message validation: `python3 scripts/install-git-hooks.py`
+
 ---
 
 ## 📄 License
